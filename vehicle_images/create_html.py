@@ -29,7 +29,7 @@ html_template = """
     </style>py
 </head>
 <body>
-    <img src="{image_filename}" alt="{image_title}">
+    <img src="images/{image_filename}" alt="{image_title}">
 </body>
 </html>
 """

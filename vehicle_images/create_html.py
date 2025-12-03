@@ -29,7 +29,7 @@ html_template = """
     </style>py
 </head>
 <body>
-    <img src="vehicle_images/images/{image_filename}" alt="{image_title}">
+    <img src="https://github.com/KrystianKrasno/vehicle_images/blob/main/vehicle_images/images/{image_filename}" alt="{image_title}">
 </body>
 </html>
 """
@@ -45,19 +45,19 @@ for filename in os.listdir(image_folder):
         # 2. Drop the "2025" and leading space 
         #    (Assuming the name is always "2025 XXXXX" or "2025 XXXXX.png")
         #    Slicing from index 5 effectively removes the first 5 characters ("2025 ")
-        cleaned_name = base_name[5:]
+        # cleaned_name = base_name[5:]
         
-        # 3. Replace spaces with underscores for the HTML filename
-        html_file_name_base = cleaned_name.replace(" ", "_")
+        # # 3. Replace spaces with underscores for the HTML filename
+        # html_file_name_base = cleaned_name.replace(" ", "_")
         
         # 4. Create the final HTML filename (e.g., Grand_Highlander.html)
-        html_filename = html_file_name_base + ".html"
+        html_filename = base_name + ".html"
         
         # 5. Format the HTML content
         #    Use the cleaned name as the title
         html_content = html_template.format(
             image_filename=filename,  # Keep the original PNG name for the src attribute
-            image_title=cleaned_name
+            image_title=base_name
         )
         
         # 6. Write the content to the new HTML file

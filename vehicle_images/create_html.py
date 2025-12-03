@@ -2,7 +2,7 @@ import os
 
 # Define the folder containing your PNG files
 # Use '.' to signify the current directory where the script is run
-image_folder = r'C:\Users\krasnok\OneDrive - TMNA\Desktop\CY2025\CY2025' 
+image_folder = r'C:\Users\krasnok\OneDrive - TMNA\Desktop\CY2025\images' 
 
 # The HTML template for each file
 html_template = """

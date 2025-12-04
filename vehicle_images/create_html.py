@@ -36,7 +36,7 @@ for dirpath, _, filenames in os.walk(root):
 with open(out_html, "w", encoding="utf-8") as f:
     f.write(html_head)
     for img in imgs:
-        f.write(f'    <img src="{img}" alt="{img}">\n')
+        f.write(f'    <img src="vehicle_images/{img}"\n')
     f.write(html_tail)
 
 print(f"Wrote {len(imgs)} images into {out_html}")

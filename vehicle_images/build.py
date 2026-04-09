@@ -35,3 +35,23 @@ def resize_image(src: Path, dst: Path) -> None:
         if img.mode not in ("RGB", "RGBA"):
             img = img.convert("RGB")
         img.save(dst, "WEBP", quality=WEB_QUALITY)
+
+
+WEB_URL_BASE = "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/"
+
+
+def build_manifest(images_web_dir: Path) -> list[dict]:
+    """Scan images_web_dir for WebP files and build a manifest list.
+
+    Returns a list of dicts sorted by code, each containing:
+      - code: uppercase stem of the filename (e.g. "CAH")
+      - url:  full public GitHub Pages URL
+    """
+    entries = []
+    for path in sorted(images_web_dir.glob("*.webp")):
+        code = path.stem.upper()
+        entries.append({
+            "code": code,
+            "url": WEB_URL_BASE + path.name,
+        })
+    return entries

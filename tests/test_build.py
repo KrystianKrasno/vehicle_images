@@ -61,3 +61,45 @@ class TestResizeImage:
         resize_image(sample_png, dst)
         with Image.open(dst) as out:
             assert out.format == "WEBP"
+
+
+from build import build_manifest, WEB_URL_BASE
+
+
+class TestBuildManifest:
+    def test_empty_directory(self, tmp_path):
+        assert build_manifest(tmp_path) == []
+
+    def test_single_file(self, tmp_path):
+        (tmp_path / "cah.webp").write_bytes(b"fake")
+        result = build_manifest(tmp_path)
+        assert result == [
+            {"code": "CAH", "url": f"{WEB_URL_BASE}cah.webp"},
+        ]
+
+    def test_multiple_files_sorted_by_code(self, tmp_path):
+        (tmp_path / "rnh.webp").write_bytes(b"fake")
+        (tmp_path / "cah.webp").write_bytes(b"fake")
+        (tmp_path / "bz4.webp").write_bytes(b"fake")
+        result = build_manifest(tmp_path)
+        codes = [entry["code"] for entry in result]
+        assert codes == ["BZ4", "CAH", "RNH"]
+
+    def test_ignores_non_webp_files(self, tmp_path):
+        (tmp_path / "cah.webp").write_bytes(b"fake")
+        (tmp_path / "readme.txt").write_bytes(b"ignore me")
+        (tmp_path / "source.png").write_bytes(b"ignore me")
+        result = build_manifest(tmp_path)
+        assert len(result) == 1
+        assert result[0]["code"] == "CAH"
+
+    def test_handles_slash_in_code(self, tmp_path):
+        # l-c.webp is the slug for Series code "L/C"
+        (tmp_path / "l-c.webp").write_bytes(b"fake")
+        result = build_manifest(tmp_path)
+        # Note: manifest stores the slug, not the original code — the
+        # reverse-mapping is applied by validate.py when comparing to
+        # series_codes.csv.
+        assert result == [
+            {"code": "L-C", "url": f"{WEB_URL_BASE}l-c.webp"},
+        ]

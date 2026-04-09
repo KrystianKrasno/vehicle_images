@@ -80,7 +80,7 @@ def main() -> int:
         return 2
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest_codes = {entry["code"] for entry in manifest}
+    manifest_codes = {entry["code"].upper() for entry in manifest}
     series_info = load_series_info(series_csv_path)
 
     report = find_coverage_gaps(manifest_codes, series_info)

@@ -33,6 +33,7 @@ class TestFindCoverageGaps:
         report = find_coverage_gaps(manifest_codes, series_info)
         assert report.missing_active == []
         assert report.missing_inactive == [("MAT", "Matrix")]
+        assert report.orphans == []
 
     def test_orphan_image_no_matching_code(self):
         manifest_codes = {"CAH", "ZZZ"}

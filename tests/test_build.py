@@ -158,3 +158,49 @@ class TestDupeTacomaTundra:
         dupe_tacoma_tundra(tmp_path)
         assert not (tmp_path / "cp2.webp").exists()
         assert not (tmp_path / "cp4.webp").exists()
+from build import generate_gallery_html
+
+
+class TestGenerateGalleryHtml:
+    def test_includes_all_images(self):
+        manifest = [
+            {"code": "CAH", "url": "https://example.com/cah.webp"},
+            {"code": "CAM", "url": "https://example.com/cam.webp"},
+        ]
+        series_info = {
+            "CAH": {"description": "Camry HV", "family": "Camry"},
+            "CAM": {"description": "Camry", "family": "Camry"},
+        }
+        html = generate_gallery_html(manifest, series_info)
+        assert "cah.webp" in html
+        assert "cam.webp" in html
+        assert "Camry HV" in html
+        assert "Camry" in html
+
+    def test_groups_by_family(self):
+        manifest = [
+            {"code": "CAH", "url": "https://example.com/cah.webp"},
+            {"code": "RNH", "url": "https://example.com/rnh.webp"},
+        ]
+        series_info = {
+            "CAH": {"description": "Camry HV", "family": "Camry"},
+            "RNH": {"description": "4Runner HV", "family": "4Runner"},
+        }
+        html = generate_gallery_html(manifest, series_info)
+        # Both family headers should be present
+        assert "<h2>4Runner</h2>" in html
+        assert "<h2>Camry</h2>" in html
+        # And sorted alphabetically: 4Runner before Camry
+        assert html.index("4Runner") < html.index("Camry")
+
+    def test_handles_unknown_code(self):
+        # If the manifest has a code not in series_info, fall back gracefully.
+        manifest = [{"code": "XXX", "url": "https://example.com/xxx.webp"}]
+        series_info = {}
+        html = generate_gallery_html(manifest, series_info)
+        assert "xxx.webp" in html
+        assert "XXX" in html  # Falls back to showing the code itself
+
+    def test_empty_manifest(self):
+        html = generate_gallery_html([], {})
+        assert "<html" in html.lower() or "<!doctype" in html.lower()

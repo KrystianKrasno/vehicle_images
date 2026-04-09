@@ -17,6 +17,29 @@ class TestSlugForCode:
     def test_empty_string(self):
         assert slug_for_code("") == ""
 
+
+from build import generate_placeholder
+
+
+class TestGeneratePlaceholder:
+    def test_creates_file(self, tmp_path):
+        dst = tmp_path / "placeholder.webp"
+        generate_placeholder(dst)
+        assert dst.exists()
+
+    def test_correct_dimensions(self, tmp_path):
+        dst = tmp_path / "placeholder.webp"
+        generate_placeholder(dst)
+        with Image.open(dst) as img:
+            assert img.width == 600
+            assert img.height == 400
+
+    def test_webp_format(self, tmp_path):
+        dst = tmp_path / "placeholder.webp"
+        generate_placeholder(dst)
+        with Image.open(dst) as img:
+            assert img.format == "WEBP"
+
 from pathlib import Path
 from PIL import Image
 import pytest

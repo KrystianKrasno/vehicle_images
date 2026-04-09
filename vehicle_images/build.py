@@ -55,3 +55,28 @@ def build_manifest(images_web_dir: Path) -> list[dict]:
             "url": WEB_URL_BASE + path.name,
         })
     return entries
+
+
+from PIL import ImageDraw, ImageFont
+
+
+def generate_placeholder(dst: Path) -> None:
+    """Create a neutral 600x400 gray placeholder WebP with 'No image' text."""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    img = Image.new("RGB", WEB_MAX_SIZE, color=(220, 220, 220))
+    draw = ImageDraw.Draw(img)
+    text = "No image"
+    # Use default font — Pillow ships with a usable bitmap font that works
+    # without extra asset downloads. Looks plain but that's fine for a fallback.
+    try:
+        font = ImageFont.truetype("arial.ttf", 36)
+    except (OSError, IOError):
+        font = ImageFont.load_default()
+    # Center the text
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    x = (WEB_MAX_SIZE[0] - text_width) // 2
+    y = (WEB_MAX_SIZE[1] - text_height) // 2
+    draw.text((x, y), text, fill=(120, 120, 120), font=font)
+    img.save(dst, "WEBP", quality=WEB_QUALITY)

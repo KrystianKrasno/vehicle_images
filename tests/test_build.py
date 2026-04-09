@@ -126,3 +126,35 @@ class TestBuildManifest:
         assert result == [
             {"code": "L-C", "url": f"{WEB_URL_BASE}l-c.webp"},
         ]
+
+
+from build import dupe_tacoma_tundra
+
+
+class TestDupeTacomaTundra:
+    def test_dupes_cp4_to_cp2(self, tmp_path):
+        (tmp_path / "cp4.webp").write_bytes(b"tacoma-bytes")
+        dupe_tacoma_tundra(tmp_path)
+        assert (tmp_path / "cp2.webp").read_bytes() == b"tacoma-bytes"
+
+    def test_dupes_cp2_to_cp4(self, tmp_path):
+        (tmp_path / "cp2.webp").write_bytes(b"tacoma-bytes")
+        dupe_tacoma_tundra(tmp_path)
+        assert (tmp_path / "cp4.webp").read_bytes() == b"tacoma-bytes"
+
+    def test_dupes_tp4_to_tp2(self, tmp_path):
+        (tmp_path / "tp4.webp").write_bytes(b"tundra-bytes")
+        dupe_tacoma_tundra(tmp_path)
+        assert (tmp_path / "tp2.webp").read_bytes() == b"tundra-bytes"
+
+    def test_noop_when_both_exist(self, tmp_path):
+        (tmp_path / "cp2.webp").write_bytes(b"original-cp2")
+        (tmp_path / "cp4.webp").write_bytes(b"original-cp4")
+        dupe_tacoma_tundra(tmp_path)
+        assert (tmp_path / "cp2.webp").read_bytes() == b"original-cp2"
+        assert (tmp_path / "cp4.webp").read_bytes() == b"original-cp4"
+
+    def test_noop_when_neither_exists(self, tmp_path):
+        dupe_tacoma_tundra(tmp_path)
+        assert not (tmp_path / "cp2.webp").exists()
+        assert not (tmp_path / "cp4.webp").exists()

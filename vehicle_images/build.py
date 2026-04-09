@@ -80,3 +80,26 @@ def generate_placeholder(dst: Path) -> None:
     y = (WEB_MAX_SIZE[1] - text_height) // 2
     draw.text((x, y), text, fill=(120, 120, 120), font=font)
     img.save(dst, "WEBP", quality=WEB_QUALITY)
+
+
+import shutil
+
+DUPE_PAIRS = [
+    ("cp2.webp", "cp4.webp"),  # Tacoma 4X2 / 4X4
+    ("tp2.webp", "tp4.webp"),  # Tundra 4X2 / 4X4
+]
+
+
+def dupe_tacoma_tundra(images_web_dir: Path) -> None:
+    """Duplicate Tacoma/Tundra files so both 4X2 and 4X4 codes have an image.
+
+    If only one of a pair exists, copies it to the missing sibling. If both
+    exist, no-op. If neither exists, no-op.
+    """
+    for left_name, right_name in DUPE_PAIRS:
+        left = images_web_dir / left_name
+        right = images_web_dir / right_name
+        if left.exists() and not right.exists():
+            shutil.copy2(left, right)
+        elif right.exists() and not left.exists():
+            shutil.copy2(right, left)

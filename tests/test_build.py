@@ -204,3 +204,42 @@ class TestGenerateGalleryHtml:
     def test_empty_manifest(self):
         html = generate_gallery_html([], {})
         assert "<html" in html.lower() or "<!doctype" in html.lower()
+
+
+from build import load_series_info
+
+
+class TestLoadSeriesInfo:
+    def test_parses_csv(self, tmp_path):
+        csv_path = tmp_path / "series.csv"
+        csv_path.write_text(
+            "Series,Series Description,Series Family,Active Flag\n"
+            "CAH,Camry HV,Camry,Active\n"
+            "RNH,4Runner HV,4Runner,Active\n"
+        )
+        info = load_series_info(csv_path)
+        assert info["CAH"] == {
+            "description": "Camry HV",
+            "family": "Camry",
+            "active": True,
+        }
+        assert info["RNH"]["family"] == "4Runner"
+
+    def test_active_flag_inactive(self, tmp_path):
+        csv_path = tmp_path / "series.csv"
+        csv_path.write_text(
+            "Series,Series Description,Series Family,Active Flag\n"
+            "MAT,Matrix,Matrix,Inactive\n"
+        )
+        info = load_series_info(csv_path)
+        assert info["MAT"]["active"] is False
+
+    def test_handles_slash_code(self, tmp_path):
+        csv_path = tmp_path / "series.csv"
+        csv_path.write_text(
+            "Series,Series Description,Series Family,Active Flag\n"
+            "L/C,Land Cruiser 70,Land Cruiser,Active\n"
+        )
+        info = load_series_info(csv_path)
+        # Key stays as the raw code; downstream consumers slug it if needed.
+        assert "L/C" in info

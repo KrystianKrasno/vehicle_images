@@ -161,3 +161,84 @@ def generate_gallery_html(manifest: list[dict], series_info: dict[str, dict]) ->
     parts.append("</body>")
     parts.append("</html>")
     return "\n".join(parts)
+
+
+import csv
+import json
+import sys
+
+
+def load_series_info(csv_path: Path) -> dict[str, dict]:
+    """Load series_codes.csv into a dict keyed by Series code."""
+    result: dict[str, dict] = {}
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            code = row["Series"]
+            result[code] = {
+                "description": row["Series Description"],
+                "family": row["Series Family"],
+                "active": row["Active Flag"].strip().lower() == "active",
+            }
+    return result
+
+
+def main() -> int:
+    """Regenerate all derived artifacts from vehicle_images/images/."""
+    root = Path(__file__).parent
+    images_dir = root / "images"
+    images_web_dir = root / "images-web"
+    manifest_path = root / "manifest.json"
+    placeholder_path = images_web_dir / "placeholder.webp"
+    series_csv_path = root / "series_codes.csv"
+    index_html_path = root / "index.html"
+
+    if not images_dir.exists():
+        print(f"ERROR: {images_dir} does not exist", file=sys.stderr)
+        return 1
+
+    # Clear and recreate images-web/
+    if images_web_dir.exists():
+        shutil.rmtree(images_web_dir)
+    images_web_dir.mkdir(parents=True)
+
+    # Resize every source image
+    source_files = sorted(images_dir.glob("*.png")) + sorted(images_dir.glob("*.jpg"))
+    resized_count = 0
+    for src in source_files:
+        dst = images_web_dir / f"{src.stem}.webp"
+        resize_image(src, dst)
+        resized_count += 1
+
+    # Dupe Tacoma/Tundra
+    dupe_tacoma_tundra(images_web_dir)
+
+    # Generate placeholder
+    generate_placeholder(placeholder_path)
+
+    # Build manifest (excluding the placeholder itself)
+    manifest = [
+        entry for entry in build_manifest(images_web_dir)
+        if entry["code"] != "PLACEHOLDER"
+    ]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    # Generate gallery HTML
+    if series_csv_path.exists():
+        series_info = load_series_info(series_csv_path)
+    else:
+        print(f"WARN: {series_csv_path} missing; gallery will lack family grouping",
+              file=sys.stderr)
+        series_info = {}
+    html = generate_gallery_html(manifest, series_info)
+    index_html_path.write_text(html, encoding="utf-8")
+
+    # Summary
+    print(f"Processed {resized_count} source images")
+    print(f"Wrote {len(manifest)} manifest entries to {manifest_path.name}")
+    print(f"Regenerated {index_html_path.name}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -85,13 +85,31 @@ def generate_placeholder(dst: Path) -> None:
 import shutil
 
 DUPE_PAIRS = [
-    ("cp2.webp", "cp4.webp"),  # Tacoma 4X2 / 4X4
-    ("tp2.webp", "tp4.webp"),  # Tundra 4X2 / 4X4
+    # Tacoma/Tundra 4X2 ↔ 4X4
+    ("cp2.webp", "cp4.webp"),
+    ("tp2.webp", "tp4.webp"),
+    # Family image sharing: source → target
+    ("bz4.webp", "bzd.webp"),
+    ("cp4.webp", "cph.webp"),
+    ("es.webp", "ese.webp"),
+    ("es.webp", "esh.webp"),
+    ("ghi.webp", "ghh.webp"),
+    ("hig.webp", "hih.webp"),
+    ("lch.webp", "lcc.webp"),
+    ("ls.webp", "lsh.webp"),
+    ("nx.webp", "nxh.webp"),
+    ("prd.webp", "l-c.webp"),
+    ("prd.webp", "tz.webp"),
+    ("rav.webp", "rah.webp"),
+    ("rc.webp", "rcf.webp"),
+    ("tp4.webp", "tph.webp"),
+    ("tx.webp", "txh.webp"),
+    ("ux.webp", "uxh.webp"),
 ]
 
 
-def dupe_tacoma_tundra(images_web_dir: Path) -> None:
-    """Duplicate Tacoma/Tundra files so both 4X2 and 4X4 codes have an image.
+def apply_dupe_pairs(images_web_dir: Path) -> None:
+    """Copy images so that related Series codes share a family image.
 
     If only one of a pair exists, copies it to the missing sibling. If both
     exist, no-op. If neither exists, no-op.
@@ -169,16 +187,20 @@ import sys
 
 
 def load_series_info(csv_path: Path) -> dict[str, dict]:
-    """Load series_codes.csv into a dict keyed by Series code."""
+    """Load series_codes.csv into a dict keyed by Series code.
+
+    Expects columns: Series Family, Series.  All entries are treated as active.
+    """
     result: dict[str, dict] = {}
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            code = row["Series"]
+            code = row["Series"].strip()
+            family = row["Series Family"].strip()
             result[code] = {
-                "description": row["Series Description"],
-                "family": row["Series Family"],
-                "active": row["Active Flag"].strip().lower() == "active",
+                "description": family,
+                "family": family,
+                "active": True,
             }
     return result
 
@@ -210,8 +232,8 @@ def main() -> int:
         resize_image(src, dst)
         resized_count += 1
 
-    # Dupe Tacoma/Tundra
-    dupe_tacoma_tundra(images_web_dir)
+    # Apply family image sharing
+    apply_dupe_pairs(images_web_dir)
 
     # Generate placeholder
     generate_placeholder(placeholder_path)

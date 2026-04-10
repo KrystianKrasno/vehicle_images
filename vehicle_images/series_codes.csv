@@ -1,96 +1,60 @@
-Series,Series Description,Series Family,Active Flag
-MAT,Matrix,Matrix,Inactive
-SIE,Sienna,Sienna,Active
-SLA,Solara,Solara,Inactive
-YAH,Yaris Hatchback,Yaris,Inactive
-YAS,Yaris Sedan,Yaris,Inactive
-AVA,Avalon,Avalon,Inactive
-TC,tC,Scion,Inactive
-XB,xB,Scion,Inactive
-XD,xD,Scion,Inactive
-FRS,FR-S,Scion,Inactive
-GSF,GS F,GS,Inactive
-FJC,FJ Cruiser,FJ Cruiser,Inactive
-SEQ,Sequoia,Sequoia,Active
-RCF,RC F,RC,Active
-IS,IS,IS,Active
-VEN,Venza,Venza,Inactive
-CAM,Camry,Camry,Active
-CP2,Tacoma 4X2,Tacoma,Active
-T86,GR86,GR86,Active
-SUP,GR Supra,Supra,Active
-COR,Corolla,Corolla,Active
-RAV,RAV4,RAV4,Active
-CP4,Tacoma 4X4,Tacoma,Active
-HIG,Highlander,Highlander,Active
-RNR,4Runner,4Runner,Active
-TP2,Tundra 4X2,Tundra,Active
-TP4,Tundra 4X4,Tundra,Active
-GS,GS,GS,Inactive
-GS4,GS 450,GS,Inactive
-ISF,IS F,IS,Inactive
-SC,SC,SC,Inactive
-ISC,IS C,IS,Inactive
-ES,ES,ES,Active
-GX,GX,GX,Active
-RX,RX,RX,Active
-LX,LX,LX,Active
-RC,RC,RC,Active
-LS,LS,LS,Active
-NX,NX,NX,Active
-LFA,LFA,LFA,Inactive
-UX,UX,UX,Active
-RXH,RX HV,RX,Active
-GSH,GS HV,GS,Inactive
-PRC,Prius c,Prius,Inactive
-MIR,Mirai,Mirai,Active
-CAH,Camry HV,Camry,Active
-PRV,Prius v,Prius,Inactive
-PRS,Prius,Prius,Active
-PHV,Prius PHEV,Prius,Active
-HS,HS,HS,Inactive
-IQ,iQ,Scion,Inactive
-IM,iM,Scion,Inactive
-CIM,Corolla IM,Corolla,Inactive
-HIH,Highlander HV,Highlander,Active
-RAH,RAV4 HV,RAV4,Active
-CT,CT,CT,Inactive
-ESH,ES HV,ES,Active
-NXH,NX HV,NX,Active
-LSH,LS HV,LS,Active
-L/C,Land Cruiser 70,Land Cruiser,Active
-RXL,RX L,RX,Inactive
-UXH,UX HV,UX,Active
-RHL,RXL HV,RX,Inactive
-COH,Corolla HV,Corolla,Active
-CHR,C-HR,C-HR,Inactive
-CHB,Corolla Hatchback,Corolla,Active
-TXP,TX PHEV,TX,Active
-BZ3,C-HR EV,C-HR,Active
-BZD,bZ Woodland,bZ,Active
-LCH,LC HV,LC,Active
-SIH,Sienna HV,Sienna,Active
-RAP,RAV4 PHEV,RAV4,Active
-GRA,GR Corolla,Corolla,Active
-LCC,LC,LC,Active
-LCV,LCV,LC,Active
-BZ4,bZ,bZ,Active
-CWN,Crown,Crown,Active
-TXH,TX HV,TX,Active
-PRD,Land Cruiser,Land Cruiser,Active
-TX,TX,TX,Active
-LXH,LX HV,LX,Active
-RNH,4Runner HV,4Runner,Active
-SEH,Sequoia HV,Sequoia,Active
-VEH,Venza HV,Venza,Inactive
-RXP,RX PHEV,RX,Active
-CCR,Corolla Cross,Corolla,Active
-RZ,RZ,RZ,Active
-ESE,ES EV,ES,Active
-CCH,Corolla Cross HV,Corolla,Active
-NXP,NX PHEV,NX,Active
-GHH,Grand Highlander HV,Highlander,Active
-CWS,Crown Signia,Crown,Active
-CPH,Tacoma HV,Tacoma,Active
-TPH,Tundra HV,Tundra,Active
-GHI,Grand Highlander,Highlander,Active
+﻿Series Family,Series
+C-HR,BZ3
+bZ,BZ4
+bZ,BZD
+Camry,CAH
+Corolla Cross,CCH
+Corolla Cross,CCR
+Corolla,CHB
+Corolla,COH
+Corolla,COR
+Tacoma,CP2
+Tacoma,CP4
+Tacoma,CPH
+Crown,CWN
+Crown,CWS
+ES,ES
+ES,ESE
+ES,ESH
+Highlander,GHH
+Highlander,GHI
+Corolla,GRA
+GX,GX
+Highlander,HIG
+Highlander,HIH
+IS,IS
+Land Cruiser,L/C
+LC,LCC
+LC,LCH
+LC,LCV
+LS,LS
+LS,LSH
+LX,LX
+Mirai,MIR
+NX,NX
+NX,NXH
+NX,NXP
+Prius,PHV
+Land Cruiser,PRD
+Prius,PRS
+RAV,RAH
+RAV,RAP
+RAV,RAV
+RC,RC
+RC,RCF
+4Runner,RNH
+4Runner,RNR
+RX,RX
+RX,RXH
+RZ,RZ
+Sequoia,SEH
+Sienna,SIH
+Supra,SUP
+GR86,T86
+Tundra,TP2
+Tundra,TP4
+Tundra,TPH
+TX,TX
+TX,TXH
+TZ,TZ
+UX,UXH

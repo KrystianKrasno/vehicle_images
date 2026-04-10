@@ -128,34 +128,34 @@ class TestBuildManifest:
         ]
 
 
-from build import dupe_tacoma_tundra
+from build import apply_dupe_pairs
 
 
-class TestDupeTacomaTundra:
+class TestApplyDupePairs:
     def test_dupes_cp4_to_cp2(self, tmp_path):
         (tmp_path / "cp4.webp").write_bytes(b"tacoma-bytes")
-        dupe_tacoma_tundra(tmp_path)
+        apply_dupe_pairs(tmp_path)
         assert (tmp_path / "cp2.webp").read_bytes() == b"tacoma-bytes"
 
     def test_dupes_cp2_to_cp4(self, tmp_path):
         (tmp_path / "cp2.webp").write_bytes(b"tacoma-bytes")
-        dupe_tacoma_tundra(tmp_path)
+        apply_dupe_pairs(tmp_path)
         assert (tmp_path / "cp4.webp").read_bytes() == b"tacoma-bytes"
 
     def test_dupes_tp4_to_tp2(self, tmp_path):
         (tmp_path / "tp4.webp").write_bytes(b"tundra-bytes")
-        dupe_tacoma_tundra(tmp_path)
+        apply_dupe_pairs(tmp_path)
         assert (tmp_path / "tp2.webp").read_bytes() == b"tundra-bytes"
 
     def test_noop_when_both_exist(self, tmp_path):
         (tmp_path / "cp2.webp").write_bytes(b"original-cp2")
         (tmp_path / "cp4.webp").write_bytes(b"original-cp4")
-        dupe_tacoma_tundra(tmp_path)
+        apply_dupe_pairs(tmp_path)
         assert (tmp_path / "cp2.webp").read_bytes() == b"original-cp2"
         assert (tmp_path / "cp4.webp").read_bytes() == b"original-cp4"
 
     def test_noop_when_neither_exists(self, tmp_path):
-        dupe_tacoma_tundra(tmp_path)
+        apply_dupe_pairs(tmp_path)
         assert not (tmp_path / "cp2.webp").exists()
         assert not (tmp_path / "cp4.webp").exists()
 from build import generate_gallery_html
@@ -213,33 +213,32 @@ class TestLoadSeriesInfo:
     def test_parses_csv(self, tmp_path):
         csv_path = tmp_path / "series.csv"
         csv_path.write_text(
-            "Series,Series Description,Series Family,Active Flag\n"
-            "CAH,Camry HV,Camry,Active\n"
-            "RNH,4Runner HV,4Runner,Active\n"
+            "Series Family,Series\n"
+            "Camry,CAH\n"
+            "4Runner,RNH\n"
         )
         info = load_series_info(csv_path)
         assert info["CAH"] == {
-            "description": "Camry HV",
+            "description": "Camry",
             "family": "Camry",
             "active": True,
         }
         assert info["RNH"]["family"] == "4Runner"
 
-    def test_active_flag_inactive(self, tmp_path):
+    def test_all_entries_are_active(self, tmp_path):
         csv_path = tmp_path / "series.csv"
         csv_path.write_text(
-            "Series,Series Description,Series Family,Active Flag\n"
-            "MAT,Matrix,Matrix,Inactive\n"
+            "Series Family,Series\n"
+            "Corolla,COR\n"
         )
         info = load_series_info(csv_path)
-        assert info["MAT"]["active"] is False
+        assert info["COR"]["active"] is True
 
     def test_handles_slash_code(self, tmp_path):
         csv_path = tmp_path / "series.csv"
         csv_path.write_text(
-            "Series,Series Description,Series Family,Active Flag\n"
-            "L/C,Land Cruiser 70,Land Cruiser,Active\n"
+            "Series Family,Series\n"
+            "Land Cruiser,L/C\n"
         )
         info = load_series_info(csv_path)
-        # Key stays as the raw code; downstream consumers slug it if needed.
         assert "L/C" in info

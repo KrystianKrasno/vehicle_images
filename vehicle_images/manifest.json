@@ -1,5 +1,9 @@
 [
   {
+    "code": "BZ3",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/bz3.webp"
+  },
+  {
     "code": "BZ4",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/bz4.webp"
   },
@@ -120,6 +124,10 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lx.webp"
   },
   {
+    "code": "MIR",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/mir.webp"
+  },
+  {
     "code": "NX",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/nx.webp"
   },
@@ -184,8 +192,8 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rz.webp"
   },
   {
-    "code": "SIE",
-    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/sie.webp"
+    "code": "SEH",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/seh.webp"
   },
   {
     "code": "SIH",

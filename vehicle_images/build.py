@@ -18,7 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 # ---------------------------------------------------------------------------
 
 WEB_MAX_SIZE = (600, 400)
-WEB_QUALITY = 85
+WEB_QUALITY = 95
 WEB_URL_BASE = (
     "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/"
 )

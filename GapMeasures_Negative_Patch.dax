@@ -1,0 +1,48 @@
+-- Gap measure patch for annual-grain sales only.
+--
+-- Purpose:
+-- Re-define only the measures affected by the gap sign convention.
+--
+-- New convention:
+--   negative = still below the record
+--   zero     = tied record
+--   positive = record broken
+--
+-- This file is intended for validation/reference in DAX Studio.
+-- To persist changes to the model, apply the same expressions in Power BI or Tabular Editor.
+--
+-- Only three measures change. All other measures (narratives, "Sales Needed to
+-- Break", etc.) consume these and produce correct results automatically.
+
+DEFINE
+
+    MEASURE 'Sales 1965-Date - Load'[Gap to Full-Year Record] =
+        VAR _priorRecord = [Prior Full-Year Record Sales]
+        RETURN
+            IF ( ISBLANK ( _priorRecord ), BLANK (), [Last Year Sales] - _priorRecord )
+
+    MEASURE 'Sales 1965-Date - Load'[Sales Needed to Break Full-Year Record] =
+        VAR _gap = [Gap to Full-Year Record]
+        RETURN
+            IF ( ISBLANK ( _gap ), BLANK (), MAX ( 0, -_gap + 1 ) )
+
+    MEASURE 'Sales 1965-Date - Load'[Overall Record Status] =
+        VAR _gap = [Gap to Full-Year Record]
+        VAR _pct = [Pct to Full-Year Record]
+        RETURN
+            SWITCH (
+                TRUE (),
+                ISBLANK ( [Last Year Sales] ), BLANK (),
+                ISBLANK ( [Prior Full-Year Record Sales] ), "No Prior Record",
+                _gap > 0, "Record Broken",
+                _gap = 0, "Tied Record",
+                _pct >= 0.95, "Near Record",
+                "Below Record"
+            )
+
+
+EVALUATE
+ROW (
+    "Gap to Full-Year Record", [Gap to Full-Year Record],
+    "Overall Record Status", [Overall Record Status]
+)

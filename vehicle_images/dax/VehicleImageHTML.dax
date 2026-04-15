@@ -1,0 +1,30 @@
+-- Measure: Vehicle Image HTML
+-- Renders an animated HTML visual for the Power BI HTML Content visual.
+-- Slides in from left (first half of alphabet) or right (second half).
+-- Shows "Select a Vehicle" prompt when no vehicle is selected.
+-- No calculated column needed -- rank computed inline via RANKX(ALL(...)).
+
+Vehicle Image HTML =
+VAR BaseUrl = "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/"
+VAR CodeRaw = SELECTEDVALUE('d_VehicleSpecs'[Series])
+VAR CodeSafe = LOWER(SUBSTITUTE(CodeRaw, "/", "-"))
+VAR ImgUrl = BaseUrl & CodeSafe & ".webp"
+VAR SortIdx = RANKX(ALL('d_VehicleSpecs'[Series]), 'd_VehicleSpecs'[Series], CodeRaw, ASC, DENSE)
+VAR Total = COUNTROWS(ALL('d_VehicleSpecs'[Series]))
+VAR Midpoint = Total / 2
+VAR Direction = IF(SortIdx <= Midpoint, "slide-from-left", "slide-from-right")
+VAR CssBlock = "<style>@keyframes slide-from-left{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes slide-from-right{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes fade-in{from{opacity:0}to{opacity:1}}</style>"
+VAR PlaceholderHtml =
+    "<div style='display:flex;justify-content:center;align-items:center;height:100%;animation:fade-in 0.5s ease-out forwards;'>" &
+        "<span style='color:#999;font-size:18px;font-family:sans-serif;'>Select a Vehicle</span>" &
+    "</div>"
+VAR VehicleHtml =
+    "<div style='display:flex;justify-content:center;align-items:center;height:100%;overflow:hidden;'>" &
+        "<div style='animation:" & Direction & " 0.4s ease-out forwards;'>" &
+            "<img src='" & ImgUrl & "' " &
+                "style='max-width:100%;max-height:100%;object-fit:contain;'>" &
+        "</div>" &
+    "</div>"
+RETURN
+    CssBlock &
+    IF(ISBLANK(CodeRaw), PlaceholderHtml, VehicleHtml)

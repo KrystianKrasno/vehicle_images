@@ -11,7 +11,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -59,14 +59,39 @@ def slug_for_code(code: str) -> str:
     return code.lower().replace("/", "-")
 
 
+def crop_whitespace(img: Image.Image) -> Image.Image:
+    """Crop near-white or transparent borders so the car fills the frame."""
+    if img.mode == "RGBA":
+        alpha = img.split()[3]
+        bbox = alpha.point(lambda p: 255 if p > 10 else 0).getbbox()
+    else:
+        rgb = img.convert("RGB")
+        white = Image.new("RGB", img.size, (255, 255, 255))
+        diff = ImageChops.difference(rgb, white)
+        r, g, b = diff.split()
+        mask = ImageChops.lighter(ImageChops.lighter(r, g), b).point(
+            lambda p: 255 if p > 10 else 0
+        )
+        bbox = mask.getbbox()
+    return img.crop(bbox) if bbox else img
+
+
 def resize_image(src: Path, dst: Path) -> None:
-    """Resize *src* to fit within WEB_MAX_SIZE and save as WebP at *dst*."""
+    """Crop whitespace, scale to fit WEB_MAX_SIZE, center on canvas, save as WebP."""
     dst.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(src) as img:
-        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
         if img.mode not in ("RGB", "RGBA"):
             img = img.convert("RGB")
-        img.save(dst, "WEBP", quality=WEB_QUALITY)
+        img = crop_whitespace(img)
+        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+        canvas = Image.new("RGB", WEB_MAX_SIZE, (255, 255, 255))
+        x = (WEB_MAX_SIZE[0] - img.width) // 2
+        y = (WEB_MAX_SIZE[1] - img.height) // 2
+        if img.mode == "RGBA":
+            canvas.paste(img, (x, y), mask=img.split()[3])
+        else:
+            canvas.paste(img, (x, y))
+        canvas.save(dst, "WEBP", quality=WEB_QUALITY)
 
 
 def build_manifest(images_web_dir: Path) -> list[dict]:

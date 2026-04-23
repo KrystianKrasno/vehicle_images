@@ -8,6 +8,7 @@ from build import (
     WEB_URL_BASE,
     apply_dupe_pairs,
     build_manifest,
+    crop_whitespace,
     generate_gallery_html,
     generate_placeholder,
     load_series_info,
@@ -55,18 +56,45 @@ class TestResizeImage:
             assert out.width <= WEB_MAX_SIZE[0]
             assert out.height <= WEB_MAX_SIZE[1]
 
-    def test_preserves_aspect_ratio(self, sample_png, tmp_path):
+    def test_output_is_always_max_size(self, sample_png, tmp_path):
         dst = tmp_path / "sample.webp"
         resize_image(sample_png, dst)
         with Image.open(dst) as out:
-            assert out.width == 600
-            assert 335 <= out.height <= 340
+            assert (out.width, out.height) == WEB_MAX_SIZE
 
     def test_output_is_webp_format(self, sample_png, tmp_path):
         dst = tmp_path / "sample.webp"
         resize_image(sample_png, dst)
         with Image.open(dst) as out:
             assert out.format == "WEBP"
+
+
+class TestCropWhitespace:
+    def test_removes_white_border(self):
+        img = Image.new("RGB", (200, 100), (255, 255, 255))
+        car = Image.new("RGB", (100, 50), (200, 100, 50))
+        img.paste(car, (50, 25))
+        result = crop_whitespace(img)
+        assert result.size == (100, 50)
+
+    def test_no_crop_when_no_whitespace(self):
+        img = Image.new("RGB", (100, 50), (200, 100, 50))
+        result = crop_whitespace(img)
+        assert result.size == (100, 50)
+
+    def test_handles_rgba_transparent_border(self):
+        img = Image.new("RGBA", (200, 100), (0, 0, 0, 0))
+        car = Image.new("RGBA", (100, 50), (200, 100, 50, 255))
+        img.paste(car, (50, 25))
+        result = crop_whitespace(img)
+        assert result.size == (100, 50)
+
+    def test_near_white_treated_as_background(self):
+        img = Image.new("RGB", (200, 100), (253, 253, 253))
+        car = Image.new("RGB", (100, 50), (150, 80, 30))
+        img.paste(car, (50, 25))
+        result = crop_whitespace(img)
+        assert result.size == (100, 50)
 
 
 class TestBuildManifest:

@@ -63,10 +63,11 @@ def generate_vehicle_html(
 
     vehicle_html = (
         "<div style='display:flex;justify-content:center;align-items:center;"
-        "height:100%;overflow:hidden;'>"
-        f"<div style='animation:{direction} 0.4s ease-out forwards;'>"
+        "width:100%;height:100%;overflow:hidden;'>"
+        f"<div style='animation:{direction} 0.4s ease-out forwards;"
+        "width:100%;height:100%;display:flex;align-items:center;justify-content:center;'>"
         f"<img src='{img_url}' "
-        "style='max-width:100%;max-height:100%;object-fit:contain;'>"
+        "style='width:100%;height:100%;object-fit:contain;'>"
         "</div></div>"
     )
     return CSS_BLOCK + vehicle_html

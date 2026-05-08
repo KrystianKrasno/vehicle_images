@@ -1,0 +1,25 @@
+-- Measure: Vehicle Images HTML (Grid)
+-- Renders a flex-wrap grid of vehicle images for the Power BI HTML Content visual.
+-- Each tile shows the vehicle image with its Series Code label underneath.
+-- Falls back to placeholder.webp on image load error.
+
+Vehicle Images HTML (Grid) =
+VAR BaseUrl = "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/"
+VAR Tiles =
+    CONCATENATEX (
+        VALUES ( 'Series'[Series Code] ),
+        VAR CodeRaw = 'Series'[Series Code]
+        VAR CodeSafe = LOWER ( SUBSTITUTE ( CodeRaw, "/", "-" ) )
+        RETURN
+            "<figure style='margin:8px;text-align:center;flex:0 0 auto;'>" &
+                "<img src='" & BaseUrl & CodeSafe & ".webp' " &
+                    "style='height:140px;max-width:240px;object-fit:contain;' " &
+                    "onerror=""this.src='" & BaseUrl & "placeholder.webp'"">" &
+                "<figcaption style='font-size:12px;margin-top:4px;'>" & CodeRaw & "</figcaption>" &
+            "</figure>",
+        ""
+    )
+RETURN
+    "<div style='display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;'>" &
+        Tiles &
+    "</div>"

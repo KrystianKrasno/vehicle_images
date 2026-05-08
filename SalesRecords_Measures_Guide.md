@@ -53,13 +53,21 @@ The `[Rank by Lifetime Sales]` measure uses `ISINSCOPE` to detect the visual's g
 
 This eliminates the need for separate ranking measures.
 
-## Vehicle Image HTML
+## Vehicle Image HTML Measures
 
-The `Vehicle Image HTML` measure displays animated vehicle images in the HTML Content visual.
+Three measures render vehicle images in HTML Content visuals. All reference the `'Series'` dimension table.
 
-**Family-aware fallback:** When a Series Family is selected (multiple series codes), the measure picks the series with the lowest `[Series Sort Order]` as the representative image. When a single series code is selected, it shows that series' image directly.
+| Measure | Visual Use | File |
+|---|---|---|
+| `[Vehicle Image HTML]` | Single animated image, context-aware (series or family) | `vehicle_images/dax/VehicleImageHTML.dax` |
+| `[Series Family Vehicle Image HTML]` | Single animated image, family-scoped with fallback | `vehicle_images/dax/SeriesFamilyVehicleImageHTML.dax` |
+| `[Vehicle Images HTML (Grid)]` | Flex-wrap grid of all series in context | `vehicle_images/dax/VehicleImagesGridHTML.dax` |
+
+**Family-aware fallback:** When multiple series codes are in context (family selection), the single-image measures pick the series with the lowest `[Series Sort Order]` as the representative image via `TOPN` with `CALCULATE(MIN(...))` for context transition.
 
 **Image URL construction:** Series code → lowercase → replace "/" with "-" → append ".webp" → prepend GitHub Pages base URL.
+
+**Series Code label:** All three measures display the resolved Series Code (2-3 characters) centered below each vehicle image.
 
 ## Gap Sign Convention
 

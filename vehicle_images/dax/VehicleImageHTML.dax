@@ -13,7 +13,7 @@ VAR CodeRaw =
         HASONEVALUE ( 'Series'[Series Code] ),
         SELECTEDVALUE ( 'Series'[Series Code] ),
         MINX (
-            TOPN ( 1, VALUES ( 'Series'[Series Code] ), 'Series'[Series Sort Order], ASC ),
+            TOPN ( 1, VALUES ( 'Series'[Series Code] ), CALCULATE ( MIN ( 'Series'[Series Sort Order] ) ), ASC ),
             'Series'[Series Code]
         )
     )
@@ -29,11 +29,12 @@ VAR PlaceholderHtml =
         "<span style='color:#999;font-size:18px;font-family:sans-serif;'>Select a Vehicle</span>" &
     "</div>"
 VAR VehicleHtml =
-    "<div style='display:flex;justify-content:center;align-items:center;height:100%;overflow:hidden;'>" &
+    "<div style='display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;overflow:hidden;'>" &
         "<div style='animation:" & Direction & " 0.4s ease-out forwards;'>" &
             "<img src='" & ImgUrl & "' " &
                 "style='max-width:100%;max-height:100%;object-fit:contain;'>" &
         "</div>" &
+        "<span style='font-size:14px;color:#555;font-family:sans-serif;margin-top:6px;'>" & CodeRaw & "</span>" &
     "</div>"
 RETURN
     CssBlock &

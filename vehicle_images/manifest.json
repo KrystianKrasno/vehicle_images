@@ -1,5 +1,9 @@
 [
   {
+    "code": "AVA",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/ava.webp"
+  },
+  {
     "code": "BZ3",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/bz3.webp"
   },
@@ -48,6 +52,10 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/cph.webp"
   },
   {
+    "code": "CT",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/ct.webp"
+  },
+  {
     "code": "CWN",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/cwn.webp"
   },
@@ -68,6 +76,14 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/esh.webp"
   },
   {
+    "code": "FJC",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/fjc.webp"
+  },
+  {
+    "code": "FRS",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/frs.webp"
+  },
+  {
     "code": "GHH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/ghh.webp"
   },
@@ -80,6 +96,10 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/gra.webp"
   },
   {
+    "code": "GS",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/gs.webp"
+  },
+  {
     "code": "GX",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/gx.webp"
   },
@@ -90,6 +110,10 @@
   {
     "code": "HIH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/hih.webp"
+  },
+  {
+    "code": "HS",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/hs.webp"
   },
   {
     "code": "IS",
@@ -112,6 +136,10 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lcv.webp"
   },
   {
+    "code": "LFA",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lfa.webp"
+  },
+  {
     "code": "LS",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/ls.webp"
   },
@@ -122,6 +150,10 @@
   {
     "code": "LX",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lx.webp"
+  },
+  {
+    "code": "MAT",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/mat.webp"
   },
   {
     "code": "MIR",
@@ -196,8 +228,16 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/seh.webp"
   },
   {
+    "code": "SIE",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/sie.webp"
+  },
+  {
     "code": "SIH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/sih.webp"
+  },
+  {
+    "code": "SLA",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/sla.webp"
   },
   {
     "code": "SUP",
@@ -238,5 +278,13 @@
   {
     "code": "UXH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/uxh.webp"
+  },
+  {
+    "code": "VEN",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/ven.webp"
+  },
+  {
+    "code": "YAH",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/yah.webp"
   }
 ]

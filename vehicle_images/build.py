@@ -112,11 +112,11 @@ def apply_dupe_pairs(images_web_dir: Path) -> None:
 
 
 def load_series_info(csv_path: Path) -> dict[str, dict]:
-    """Load series_codes.csv into a dict keyed by Series code."""
+    """Load series_codes.csv into a dict keyed by Series Code."""
     result: dict[str, dict] = {}
     with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
-            code = row["Series"].strip()
+            code = row["Series Code"].strip()
             family = row["Series Family"].strip()
             result[code] = {
                 "description": family,

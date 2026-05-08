@@ -1,7 +1,7 @@
 """Validate coverage between manifest.json and series_codes.csv.
 
 Exits non-zero if any active Series codes lack a matching image. Used as a
-pre-push safety net to catch coverage drift when d_VehicleSpecs changes.
+pre-push safety net to catch coverage drift when the Series table changes.
 """
 
 import json

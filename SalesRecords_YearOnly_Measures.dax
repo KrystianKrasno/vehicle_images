@@ -1,33 +1,32 @@
--- Sales Records measure pack for annual-grain sales only.
--- Assumes the model already contains:
---   [1965_Sales] = SUM('Sales 1965-Date - Load'[Sales])
+-- Unified Sales Records measure pack (annual-grain only).
 --
 -- Important:
--- 1) This is a DAX Studio query using DEFINE MEASURE. It is useful for validation and reference.
--- 2) Query-scoped measures defined here do NOT persist back to the Power BI model.
--- 3) To save them permanently, create the measures in Power BI or Tabular Editor using the same definitions.
+-- 1) DAX Studio query using DEFINE MEASURE — for validation and reference.
+-- 2) Query-scoped measures do NOT persist back to the Power BI model.
+-- 3) To save permanently, create the measures in Power BI or Tabular Editor.
 --
--- Annual-grain impact:
--- Because the fact data is only at YEAR level, all same-date / YTD / pace measures were removed.
--- "Upcoming records" is therefore modeled as:
---   last available year sales vs the best PRIOR annual record
--- both overall and by series.
+-- Model tables:
+--   Fact:      'Sales 1965-Date - Load'
+--   Calendar:  'd_Dates' with [Year], [Dates]
+--   Dimension: 'Series' with [Series Code], [Series Family], [Series Sort Order],
+--              [Luxury Type], [Active Flag], etc.
 --
--- Context-aware design:
--- All measures respond to whatever filter context the visual provides.
--- In a table by Series, they evaluate per series.
--- In a table by Series Family, they evaluate per family.
--- On a card with no dimension, they evaluate overall.
--- There is no need for separate "Series" or "Family" prefixed copies of these measures.
+-- This file replaces the former SalesRecords + SeriesFamily + GapPatch files.
+-- All measures are context-aware: they auto-adapt to Series Code, Series Family,
+-- or overall grain depending on the visual's filter context.
 
 DEFINE
 
-    // -------------------------------------------------------------------------
-    // Core measures
-    // -------------------------------------------------------------------------
+    // =========================================================================
+    // Base measure
+    // =========================================================================
 
-    MEASURE 'Sales 1965-Date - Load'[Lifetime Sales] =
-        CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
+    MEASURE 'Sales 1965-Date - Load'[1965_Sales] =
+        SUM ( 'Sales 1965-Date - Load'[Sales] )
+
+    // =========================================================================
+    // Internal helpers (not user-facing, consumed by live measures)
+    // =========================================================================
 
     MEASURE 'Sales 1965-Date - Load'[Last Sales Year] =
         MAXX (
@@ -38,35 +37,50 @@ DEFINE
             'd_Dates'[Year]
         )
 
-    MEASURE 'Sales 1965-Date - Load'[Last Year Sales] =
-        VAR _yr = [Last Sales Year]
-        RETURN
-            IF (
-                NOT ISBLANK ( _yr ),
-                CALCULATE (
-                    [1965_Sales],
-                    FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = _yr )
-                )
-            )
-
     MEASURE 'Sales 1965-Date - Load'[Prior Year Sales] =
-        VAR _yr = [Last Sales Year]
+        VAR LatestYear = [Last Sales Year]
         RETURN
             IF (
-                NOT ISBLANK ( _yr ),
+                NOT ISBLANK ( LatestYear ),
                 CALCULATE (
                     [1965_Sales],
-                    FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = _yr - 1 )
+                    FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = LatestYear - 1 )
                 )
             )
 
-    MEASURE 'Sales 1965-Date - Load'[YoY Change vs Prior Year] =
-        [Last Year Sales] - [Prior Year Sales]
+    MEASURE 'Sales 1965-Date - Load'[Prior Full-Year Record Sales] =
+        VAR LatestYear = [Last Sales Year]
+        VAR YearSalesTable =
+            FILTER (
+                ADDCOLUMNS (
+                    SUMMARIZE (
+                        FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] < LatestYear ),
+                        'd_Dates'[Year]
+                    ),
+                    "AnnualSales", CALCULATE ( [1965_Sales] )
+                ),
+                NOT ISBLANK ( [AnnualSales] )
+            )
+        RETURN
+            MAXX (
+                TOPN ( 1, YearSalesTable, [AnnualSales], DESC, 'd_Dates'[Year], DESC ),
+                [AnnualSales]
+            )
 
-    MEASURE 'Sales 1965-Date - Load'[YoY % vs Prior Year] =
-        DIVIDE ( [YoY Change vs Prior Year], [Prior Year Sales] )
+    MEASURE 'Sales 1965-Date - Load'[Pct to Full-Year Record] =
+        DIVIDE ( [Current Year Sales], [Prior Full-Year Record Sales] )
 
-    MEASURE 'Sales 1965-Date - Load'[First Sale Year] =
+
+    // =========================================================================
+    // Live measures (1-10)
+    // =========================================================================
+
+    // 1. Lifetime Sales
+    MEASURE 'Sales 1965-Date - Load'[Lifetime Sales] =
+        CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
+
+    // 2. First Sales Year
+    MEASURE 'Sales 1965-Date - Load'[First Sales Year] =
         MINX (
             FILTER (
                 ALL ( 'd_Dates'[Year] ),
@@ -75,263 +89,134 @@ DEFINE
             'd_Dates'[Year]
         )
 
+    // 3. Best Sales Year
     MEASURE 'Sales 1965-Date - Load'[Best Sales Year] =
-        VAR _yearTable =
+        VAR YearSalesTable =
             FILTER (
                 ADDCOLUMNS (
                     ALL ( 'd_Dates'[Year] ),
-                    "__Sales", CALCULATE ( [1965_Sales] )
+                    "AnnualSales", CALCULATE ( [1965_Sales] )
                 ),
-                NOT ISBLANK ( [__Sales] )
+                NOT ISBLANK ( [AnnualSales] )
             )
         RETURN
             MAXX (
-                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
+                TOPN ( 1, YearSalesTable, [AnnualSales], DESC, 'd_Dates'[Year], DESC ),
                 'd_Dates'[Year]
             )
 
-    MEASURE 'Sales 1965-Date - Load'[Best Sales Value] =
-        VAR _yearTable =
+    // 4. Best Annual Sales
+    MEASURE 'Sales 1965-Date - Load'[Best Annual Sales] =
+        VAR YearSalesTable =
             FILTER (
                 ADDCOLUMNS (
                     ALL ( 'd_Dates'[Year] ),
-                    "__Sales", CALCULATE ( [1965_Sales] )
+                    "AnnualSales", CALCULATE ( [1965_Sales] )
                 ),
-                NOT ISBLANK ( [__Sales] )
+                NOT ISBLANK ( [AnnualSales] )
             )
         RETURN
             MAXX (
-                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
-                [__Sales]
+                TOPN ( 1, YearSalesTable, [AnnualSales], DESC, 'd_Dates'[Year], DESC ),
+                [AnnualSales]
             )
 
-    MEASURE 'Sales 1965-Date - Load'[Active Series Count] =
-        COUNTROWS (
-            FILTER (
-                VALUES ( 'd_VehicleSpecs'[Series] ),
-                CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) ) > 0
+    // 5. Current Year Sales
+    MEASURE 'Sales 1965-Date - Load'[Current Year Sales] =
+        VAR LatestYear = [Last Sales Year]
+        RETURN
+            IF (
+                NOT ISBLANK ( LatestYear ),
+                CALCULATE (
+                    [1965_Sales],
+                    FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = LatestYear )
+                )
             )
+
+    // 6. Rank by Lifetime Sales (unified — auto-detects Series Code or Family grain)
+    MEASURE 'Sales 1965-Date - Load'[Rank by Lifetime Sales] =
+        SWITCH (
+            TRUE (),
+            ISINSCOPE ( 'Series'[Series Code] ),
+                RANKX (
+                    ALLSELECTED ( 'Series'[Series Code] ),
+                    CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) ),
+                    ,
+                    DESC,
+                    DENSE
+                ),
+            ISINSCOPE ( 'Series'[Series Family] ),
+                RANKX (
+                    ALLSELECTED ( 'Series'[Series Family] ),
+                    CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) ),
+                    ,
+                    DESC,
+                    DENSE
+                )
         )
 
-
-    // -------------------------------------------------------------------------
-    // Ranking measures
-    // -------------------------------------------------------------------------
-
-    MEASURE 'Sales 1965-Date - Load'[Top Series Name] =
-        VAR _seriesTable =
-            FILTER (
-                ADDCOLUMNS (
-                    ALL ( 'd_VehicleSpecs'[Series] ),
-                    "__Sales", CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
-                ),
-                NOT ISBLANK ( [__Sales] )
-                    && NOT ISBLANK ( 'd_VehicleSpecs'[Series] )
-            )
-        RETURN
-            MAXX (
-                TOPN ( 1, _seriesTable, [__Sales], DESC, 'd_VehicleSpecs'[Series], ASC ),
-                'd_VehicleSpecs'[Series]
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Top Series Sales] =
-        VAR _seriesTable =
-            FILTER (
-                ADDCOLUMNS (
-                    ALL ( 'd_VehicleSpecs'[Series] ),
-                    "__Sales", CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
-                ),
-                NOT ISBLANK ( [__Sales] )
-                    && NOT ISBLANK ( 'd_VehicleSpecs'[Series] )
-            )
-        RETURN
-            MAXX (
-                TOPN ( 1, _seriesTable, [__Sales], DESC, 'd_VehicleSpecs'[Series], ASC ),
-                [__Sales]
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Series Rank by Lifetime Sales] =
-        RANKX (
-            ALLSELECTED ( 'd_VehicleSpecs'[Series] ),
-            CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) ),
-            ,
-            DESC,
-            DENSE
+    // 7. YoY %
+    MEASURE 'Sales 1965-Date - Load'[YoY %] =
+        DIVIDE (
+            [Current Year Sales] - [Prior Year Sales],
+            [Prior Year Sales]
         )
 
-
-    // -------------------------------------------------------------------------
-    // Record-chase measures
-    // Context-aware: evaluates at whatever grain the visual provides
-    // (overall, per series, per family, or any slicer combination).
-    // -------------------------------------------------------------------------
-
-    MEASURE 'Sales 1965-Date - Load'[Prior Full-Year Record Year] =
-        VAR _lastYear = [Last Sales Year]
-        VAR _yearTable =
-            FILTER (
-                ADDCOLUMNS (
-                    SUMMARIZE (
-                        FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] < _lastYear ),
-                        'd_Dates'[Year]
-                    ),
-                    "__Sales", CALCULATE ( [1965_Sales] )
-                ),
-                NOT ISBLANK ( [__Sales] )
-            )
-        RETURN
-            MAXX (
-                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
-                'd_Dates'[Year]
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Prior Full-Year Record Sales] =
-        VAR _lastYear = [Last Sales Year]
-        VAR _yearTable =
-            FILTER (
-                ADDCOLUMNS (
-                    SUMMARIZE (
-                        FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] < _lastYear ),
-                        'd_Dates'[Year]
-                    ),
-                    "__Sales", CALCULATE ( [1965_Sales] )
-                ),
-                NOT ISBLANK ( [__Sales] )
-            )
-        RETURN
-            MAXX (
-                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
-                [__Sales]
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Gap to Full-Year Record] =
-        VAR _priorRecord = [Prior Full-Year Record Sales]
-        RETURN
-            IF ( ISBLANK ( _priorRecord ), BLANK (), _priorRecord - [Last Year Sales] )
-
-    MEASURE 'Sales 1965-Date - Load'[Sales Needed to Break Full-Year Record] =
-        VAR _gap = [Gap to Full-Year Record]
-        RETURN
-            IF ( ISBLANK ( _gap ), BLANK (), MAX ( 0, _gap + 1 ) )
-
-    MEASURE 'Sales 1965-Date - Load'[Pct to Full-Year Record] =
-        DIVIDE ( [Last Year Sales], [Prior Full-Year Record Sales] )
-
+    // 8. Overall Record Status
     MEASURE 'Sales 1965-Date - Load'[Overall Record Status] =
-        VAR _gap = [Gap to Full-Year Record]
-        VAR _pct = [Pct to Full-Year Record]
+        VAR RecordGap = [Gap to Full-Year Record]
+        VAR RecordPct = [Pct to Full-Year Record]
         RETURN
             SWITCH (
                 TRUE (),
-                ISBLANK ( [Last Year Sales] ), BLANK (),
+                ISBLANK ( [Current Year Sales] ), BLANK (),
                 ISBLANK ( [Prior Full-Year Record Sales] ), "No Prior Record",
-                _gap < 0, "Record Broken",
-                _gap = 0, "Tied Record",
-                _pct >= 0.95, "Near Record",
+                RecordGap < 0, "Record Broken",
+                RecordGap = 0, "Tied Record",
+                RecordPct >= 0.95, "Near Record",
                 "Below Record"
             )
 
-
-    // -------------------------------------------------------------------------
-    // Narrative helper measures
-    // -------------------------------------------------------------------------
-
-    MEASURE 'Sales 1965-Date - Load'[First Sale Lead Series] =
-        VAR _firstYear = [First Sale Year]
-        VAR _seriesTable =
+    // 9. Prior Full-Year Record Year
+    MEASURE 'Sales 1965-Date - Load'[Prior Full-Year Record Year] =
+        VAR LatestYear = [Last Sales Year]
+        VAR YearSalesTable =
             FILTER (
                 ADDCOLUMNS (
-                    ALL ( 'd_VehicleSpecs'[Series] ),
-                    "__SalesInFirstYear",
-                        CALCULATE (
-                            [1965_Sales],
-                            FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = _firstYear )
-                        )
+                    SUMMARIZE (
+                        FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] < LatestYear ),
+                        'd_Dates'[Year]
+                    ),
+                    "AnnualSales", CALCULATE ( [1965_Sales] )
                 ),
-                [__SalesInFirstYear] > 0
+                NOT ISBLANK ( [AnnualSales] )
             )
         RETURN
             MAXX (
-                TOPN (
-                    1,
-                    _seriesTable,
-                    [__SalesInFirstYear], DESC,
-                    'd_VehicleSpecs'[Series], ASC
-                ),
-                'd_VehicleSpecs'[Series]
+                TOPN ( 1, YearSalesTable, [AnnualSales], DESC, 'd_Dates'[Year], DESC ),
+                'd_Dates'[Year]
             )
 
-    MEASURE 'Sales 1965-Date - Load'[Narrative - Best Sales Year] =
-        VAR _yr = [Best Sales Year]
-        VAR _sales = [Best Sales Value]
+    // 10. Gap to Full-Year Record
+    MEASURE 'Sales 1965-Date - Load'[Gap to Full-Year Record] =
+        VAR PriorRecordSales = [Prior Full-Year Record Sales]
         RETURN
             IF (
-                NOT ISBLANK ( _yr ),
-                "Best sales year was "
-                    & FORMAT ( _yr, "0" )
-                    & " with "
-                    & FORMAT ( _sales, "#,0" )
-                    & " sales."
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Narrative - First Sale] =
-        VAR _yr = [First Sale Year]
-        VAR _series = [First Sale Lead Series]
-        RETURN
-            IF (
-                NOT ISBLANK ( _yr ),
-                "First recorded sales year was "
-                    & FORMAT ( _yr, "0" )
-                    & IF ( NOT ISBLANK ( _series ), ", led by series " & _series, "" )
-                    & "."
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Narrative - Top Series] =
-        VAR _series = [Top Series Name]
-        VAR _sales = [Top Series Sales]
-        RETURN
-            IF (
-                NOT ISBLANK ( _series ),
-                _series
-                    & " is the top series all-time with "
-                    & FORMAT ( _sales, "#,0" )
-                    & " sales."
-            )
-
-    MEASURE 'Sales 1965-Date - Load'[Narrative - Upcoming Record] =
-        VAR _status = [Overall Record Status]
-        VAR _need = [Sales Needed to Break Full-Year Record]
-        VAR _recordYear = [Prior Full-Year Record Year]
-        RETURN
-            SWITCH (
-                TRUE (),
-                ISBLANK ( [Last Year Sales] ), BLANK (),
-                _status = "No Prior Record",
-                    "No prior annual record exists for comparison.",
-                _status = "Record Broken",
-                    "The last sales year has already broken the prior full-year record.",
-                _status = "Tied Record",
-                    "The last sales year is tied with the prior full-year record.",
-                TRUE (),
-                    "The last sales year is "
-                        & FORMAT ( _need, "#,0" )
-                        & " sales away from the prior annual record set in "
-                        & FORMAT ( _recordYear, "0" )
-                        & "."
+                ISBLANK ( PriorRecordSales ),
+                BLANK (),
+                PriorRecordSales - [Current Year Sales]
             )
 
 
 EVALUATE
 ROW (
-    "Last Sales Year", [Last Sales Year],
-    "Last Year Sales", [Last Year Sales],
-    "First Sale Year", [First Sale Year],
+    "Lifetime Sales", [Lifetime Sales],
+    "First Sales Year", [First Sales Year],
     "Best Sales Year", [Best Sales Year],
-    "Best Sales Value", [Best Sales Value],
-    "Top Series Name", [Top Series Name],
-    "Top Series Sales", [Top Series Sales],
+    "Best Annual Sales", [Best Annual Sales],
+    "Current Year Sales", [Current Year Sales],
+    "YoY %", [YoY %],
     "Prior Full-Year Record Year", [Prior Full-Year Record Year],
-    "Prior Full-Year Record Sales", [Prior Full-Year Record Sales],
     "Gap to Full-Year Record", [Gap to Full-Year Record],
     "Overall Record Status", [Overall Record Status]
 )

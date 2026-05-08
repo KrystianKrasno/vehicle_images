@@ -1,0 +1,326 @@
+-- Series Family measure pack for annual-grain sales only.
+-- Assumes the model already contains:
+--   [1965_Sales] = SUM('Sales 1965-Date - Load'[Sales])
+--
+-- Important:
+-- 1) This is a DAX Studio query using DEFINE MEASURE for validation/reference.
+-- 2) These definitions do NOT persist to the model from DAX Studio.
+-- 3) To save them permanently, create/update them in Power BI or Tabular Editor.
+--
+-- Grain note:
+-- Sales are available only by YEAR, so all logic is annual-grain only.
+-- "Upcoming records" at family level means:
+--   last available year sales for the family vs that family's best PRIOR annual record.
+
+DEFINE
+
+    // -------------------------------------------------------------------------
+    // Family-level core measures
+    // These are intended for visuals at Series Family grain.
+    // -------------------------------------------------------------------------
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Lifetime Sales] =
+        CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Last Sales Year] =
+        MAXX (
+            FILTER (
+                ALL ( 'd_Dates'[Year] ),
+                CALCULATE ( [1965_Sales] ) > 0
+            ),
+            'd_Dates'[Year]
+        )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Last Year Sales] =
+        VAR _yr = [Series Family Last Sales Year]
+        RETURN
+            IF (
+                NOT ISBLANK ( _yr ),
+                CALCULATE (
+                    [1965_Sales],
+                    FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = _yr )
+                )
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Prior Year Sales] =
+        VAR _yr = [Series Family Last Sales Year]
+        RETURN
+            IF (
+                NOT ISBLANK ( _yr ),
+                CALCULATE (
+                    [1965_Sales],
+                    FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] = _yr - 1 )
+                )
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family YoY Change vs Prior Year] =
+        [Series Family Last Year Sales] - [Series Family Prior Year Sales]
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family YoY % vs Prior Year] =
+        DIVIDE ( [Series Family YoY Change vs Prior Year], [Series Family Prior Year Sales] )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family First Sale Year] =
+        MINX (
+            FILTER (
+                ALL ( 'd_Dates'[Year] ),
+                CALCULATE ( [1965_Sales] ) > 0
+            ),
+            'd_Dates'[Year]
+        )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Best Year] =
+        VAR _yearTable =
+            FILTER (
+                ADDCOLUMNS (
+                    ALL ( 'd_Dates'[Year] ),
+                    "__Sales", CALCULATE ( [1965_Sales] )
+                ),
+                NOT ISBLANK ( [__Sales] )
+            )
+        RETURN
+            MAXX (
+                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
+                'd_Dates'[Year]
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Best Year Sales] =
+        VAR _yearTable =
+            FILTER (
+                ADDCOLUMNS (
+                    ALL ( 'd_Dates'[Year] ),
+                    "__Sales", CALCULATE ( [1965_Sales] )
+                ),
+                NOT ISBLANK ( [__Sales] )
+            )
+        RETURN
+            MAXX (
+                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
+                [__Sales]
+            )
+
+
+    // -------------------------------------------------------------------------
+    // Family ranking measures
+    // Use these in visuals where the grain is Series Family.
+    // -------------------------------------------------------------------------
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Rank by Lifetime Sales] =
+        VAR _currentSales = [Series Family Lifetime Sales]
+        RETURN
+            IF (
+                ISINSCOPE ( 'd_VehicleSpecs'[Series Family] ),
+                RANKX (
+                    ALLSELECTED ( 'd_VehicleSpecs'[Series Family] ),
+                    CALCULATE ( [Series Family Lifetime Sales] ),
+                    _currentSales,
+                    DESC,
+                    DENSE
+                )
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Top Series Family Name] =
+        VAR _familyTable =
+            FILTER (
+                ADDCOLUMNS (
+                    ALL ( 'd_VehicleSpecs'[Series Family] ),
+                    "__Sales", CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
+                ),
+                NOT ISBLANK ( [__Sales] )
+                    && NOT ISBLANK ( 'd_VehicleSpecs'[Series Family] )
+            )
+        RETURN
+            MAXX (
+                TOPN (
+                    1,
+                    _familyTable,
+                    [__Sales], DESC,
+                    'd_VehicleSpecs'[Series Family], ASC
+                ),
+                'd_VehicleSpecs'[Series Family]
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Top Series Family Sales] =
+        VAR _familyTable =
+            FILTER (
+                ADDCOLUMNS (
+                    ALL ( 'd_VehicleSpecs'[Series Family] ),
+                    "__Sales", CALCULATE ( [1965_Sales], REMOVEFILTERS ( 'd_Dates' ) )
+                ),
+                NOT ISBLANK ( [__Sales] )
+                    && NOT ISBLANK ( 'd_VehicleSpecs'[Series Family] )
+            )
+        RETURN
+            MAXX (
+                TOPN (
+                    1,
+                    _familyTable,
+                    [__Sales], DESC,
+                    'd_VehicleSpecs'[Series Family], ASC
+                ),
+                [__Sales]
+            )
+
+
+    // -------------------------------------------------------------------------
+    // Family-level record chase measures
+    // These compare the last year for the family to that family's best PRIOR year.
+    // -------------------------------------------------------------------------
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Prior Record Year] =
+        VAR _lastYear = [Series Family Last Sales Year]
+        VAR _yearTable =
+            FILTER (
+                ADDCOLUMNS (
+                    SUMMARIZE (
+                        FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] < _lastYear ),
+                        'd_Dates'[Year]
+                    ),
+                    "__Sales", CALCULATE ( [1965_Sales] )
+                ),
+                NOT ISBLANK ( [__Sales] )
+            )
+        RETURN
+            MAXX (
+                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
+                'd_Dates'[Year]
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Prior Record Sales] =
+        VAR _lastYear = [Series Family Last Sales Year]
+        VAR _yearTable =
+            FILTER (
+                ADDCOLUMNS (
+                    SUMMARIZE (
+                        FILTER ( ALL ( 'd_Dates' ), 'd_Dates'[Year] < _lastYear ),
+                        'd_Dates'[Year]
+                    ),
+                    "__Sales", CALCULATE ( [1965_Sales] )
+                ),
+                NOT ISBLANK ( [__Sales] )
+            )
+        RETURN
+            MAXX (
+                TOPN ( 1, _yearTable, [__Sales], DESC, 'd_Dates'[Year], DESC ),
+                [__Sales]
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Gap to Series Family Record] =
+        VAR _priorRecord = [Series Family Prior Record Sales]
+        RETURN
+            IF (
+                ISBLANK ( _priorRecord ),
+                BLANK (),
+                _priorRecord - [Series Family Last Year Sales]
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Sales Needed to Break Series Family Record] =
+        VAR _gap = [Gap to Series Family Record]
+        RETURN
+            IF ( ISBLANK ( _gap ), BLANK (), MAX ( 0, _gap + 1 ) )
+
+    MEASURE 'Sales 1965-Date - Load'[Pct to Series Family Record] =
+        DIVIDE ( [Series Family Last Year Sales], [Series Family Prior Record Sales] )
+
+    MEASURE 'Sales 1965-Date - Load'[Series Family Record Status] =
+        VAR _gap = [Gap to Series Family Record]
+        VAR _pct = [Pct to Series Family Record]
+        RETURN
+            SWITCH (
+                TRUE (),
+                ISBLANK ( [Series Family Last Year Sales] ), BLANK (),
+                ISBLANK ( [Series Family Prior Record Sales] ), "No Prior Record",
+                _gap < 0, "Record Broken",
+                _gap = 0, "Tied Record",
+                _pct >= 0.95, "Near Record",
+                "Below Record"
+            )
+
+
+    // -------------------------------------------------------------------------
+    // Family narrative helper measures
+    // -------------------------------------------------------------------------
+
+    MEASURE 'Sales 1965-Date - Load'[Narrative - Top Series Family] =
+        VAR _family = [Top Series Family Name]
+        VAR _sales = [Top Series Family Sales]
+        RETURN
+            IF (
+                NOT ISBLANK ( _family ),
+                _family
+                    & " is the top series family all-time with "
+                    & FORMAT ( _sales, "#,0" )
+                    & " sales."
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Narrative - Series Family Best Year] =
+        VAR _family = SELECTEDVALUE ( 'd_VehicleSpecs'[Series Family] )
+        VAR _yr = [Series Family Best Year]
+        VAR _sales = [Series Family Best Year Sales]
+        RETURN
+            IF (
+                NOT ISBLANK ( _yr ),
+                IF (
+                    NOT ISBLANK ( _family ),
+                    _family & " reached its best year in ",
+                    "Best family sales year was "
+                )
+                    & FORMAT ( _yr, "0" )
+                    & " with "
+                    & FORMAT ( _sales, "#,0" )
+                    & " sales."
+            )
+
+    MEASURE 'Sales 1965-Date - Load'[Narrative - Series Family Upcoming Record] =
+        VAR _family = SELECTEDVALUE ( 'd_VehicleSpecs'[Series Family] )
+        VAR _status = [Series Family Record Status]
+        VAR _need = [Sales Needed to Break Series Family Record]
+        VAR _recordYear = [Series Family Prior Record Year]
+        RETURN
+            SWITCH (
+                TRUE (),
+                ISBLANK ( [Series Family Last Year Sales] ), BLANK (),
+                _status = "No Prior Record",
+                    IF (
+                        NOT ISBLANK ( _family ),
+                        _family & " has no prior annual record for comparison.",
+                        "No prior family annual record exists for comparison."
+                    ),
+                _status = "Record Broken",
+                    IF (
+                        NOT ISBLANK ( _family ),
+                        _family & " has already broken its prior annual record.",
+                        "The selected family has already broken its prior annual record."
+                    ),
+                _status = "Tied Record",
+                    IF (
+                        NOT ISBLANK ( _family ),
+                        _family & " is tied with its prior annual record.",
+                        "The selected family is tied with its prior annual record."
+                    ),
+                TRUE (),
+                    IF (
+                        NOT ISBLANK ( _family ),
+                        _family,
+                        "The selected family"
+                    )
+                        & " is "
+                        & FORMAT ( _need, "#,0" )
+                        & " sales away from its prior annual record set in "
+                        & FORMAT ( _recordYear, "0" )
+                        & "."
+            )
+
+
+EVALUATE
+ROW (
+    "Top Series Family Name", [Top Series Family Name],
+    "Top Series Family Sales", [Top Series Family Sales],
+    "Series Family Best Year", [Series Family Best Year],
+    "Series Family Best Year Sales", [Series Family Best Year Sales],
+    "Series Family Last Sales Year", [Series Family Last Sales Year],
+    "Series Family Last Year Sales", [Series Family Last Year Sales],
+    "Series Family Prior Record Year", [Series Family Prior Record Year],
+    "Series Family Prior Record Sales", [Series Family Prior Record Sales],
+    "Gap to Series Family Record", [Gap to Series Family Record],
+    "Series Family Record Status", [Series Family Record Status]
+)

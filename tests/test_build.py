@@ -178,7 +178,7 @@ class TestGenerateGalleryHtml:
 class TestLoadSeriesInfo:
     def test_parses_csv(self, tmp_path):
         csv_path = tmp_path / "series.csv"
-        csv_path.write_text("Series Family,Series\nCamry,CAH\n4Runner,RNH\n")
+        csv_path.write_text("Series Family,Series Code\nCamry,CAH\n4Runner,RNH\n")
         info = load_series_info(csv_path)
         assert info["CAH"] == {
             "description": "Camry",
@@ -189,10 +189,10 @@ class TestLoadSeriesInfo:
 
     def test_all_entries_are_active(self, tmp_path):
         csv_path = tmp_path / "series.csv"
-        csv_path.write_text("Series Family,Series\nCorolla,COR\n")
+        csv_path.write_text("Series Family,Series Code\nCorolla,COR\n")
         assert load_series_info(csv_path)["COR"]["active"] is True
 
     def test_handles_slash_code(self, tmp_path):
         csv_path = tmp_path / "series.csv"
-        csv_path.write_text("Series Family,Series\nLand Cruiser,L/C\n")
+        csv_path.write_text("Series Family,Series Code\nLand Cruiser,L/C\n")
         assert "L/C" in load_series_info(csv_path)

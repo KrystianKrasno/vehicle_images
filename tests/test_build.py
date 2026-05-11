@@ -10,6 +10,7 @@ from build import (
     build_manifest,
     generate_gallery_html,
     generate_placeholder,
+    generate_qa_report,
     load_series_info,
     resize_image,
     slug_for_code,
@@ -67,6 +68,24 @@ class TestResizeImage:
         resize_image(sample_png, dst)
         with Image.open(dst) as out:
             assert out.format == "WEBP"
+
+
+class TestBackgroundRemoval:
+    def test_resize_image_produces_rgba_output(self, sample_png, tmp_path):
+        """After background removal, output should have an alpha channel."""
+        dst = tmp_path / "sample.webp"
+        resize_image(sample_png, dst)
+        with Image.open(dst) as out:
+            assert out.mode == "RGBA"
+
+    def test_resize_image_has_transparent_pixels(self, sample_png, tmp_path):
+        """Background removal should create some transparent pixels."""
+        dst = tmp_path / "sample.webp"
+        resize_image(sample_png, dst)
+        with Image.open(dst) as out:
+            alpha = out.getchannel("A")
+            histogram = alpha.histogram()
+            assert histogram[0] > 0
 
 
 class TestBuildManifest:
@@ -196,3 +215,55 @@ class TestLoadSeriesInfo:
         csv_path = tmp_path / "series.csv"
         csv_path.write_text("Series Family,Series Code\nLand Cruiser,L/C\n")
         assert "L/C" in load_series_info(csv_path)
+
+
+class TestQAReport:
+    def test_creates_report_html(self, tmp_path):
+        """QA mode should generate a report.html file."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        Image.new("RGB", (100, 100), color=(255, 0, 0)).save(
+            images_dir / "test.png", "PNG"
+        )
+        qa_dir = tmp_path / "qa-review"
+        generate_qa_report(images_dir, qa_dir)
+        assert (qa_dir / "report.html").exists()
+
+    def test_creates_before_and_after_images(self, tmp_path):
+        """QA mode should save original and processed thumbnails."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        Image.new("RGB", (100, 100), color=(255, 0, 0)).save(
+            images_dir / "test.png", "PNG"
+        )
+        qa_dir = tmp_path / "qa-review"
+        generate_qa_report(images_dir, qa_dir)
+        assert (qa_dir / "test_before.webp").exists()
+        assert (qa_dir / "test_after.webp").exists()
+
+    def test_does_not_modify_images_web(self, tmp_path):
+        """QA mode must not touch the production images-web directory."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        Image.new("RGB", (100, 100), color=(255, 0, 0)).save(
+            images_dir / "test.png", "PNG"
+        )
+        images_web = tmp_path / "images-web"
+        images_web.mkdir()
+        marker = images_web / "marker.txt"
+        marker.write_text("untouched")
+        generate_qa_report(images_dir, tmp_path / "qa-review")
+        assert marker.read_text() == "untouched"
+
+    def test_report_contains_image_references(self, tmp_path):
+        """Report HTML should reference the before/after images."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        Image.new("RGB", (100, 100), color=(255, 0, 0)).save(
+            images_dir / "abc.png", "PNG"
+        )
+        qa_dir = tmp_path / "qa-review"
+        generate_qa_report(images_dir, qa_dir)
+        html = (qa_dir / "report.html").read_text()
+        assert "abc_before.webp" in html
+        assert "abc_after.webp" in html

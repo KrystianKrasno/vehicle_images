@@ -12,6 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+from rembg import remove as remove_bg
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -19,6 +20,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 WEB_MAX_SIZE = (600, 400)
 WEB_QUALITY = 95
+REMBG_MAX_SIZE = (1200, 800)  # Downsample before background removal to save RAM
+REMBG_OPTS = {
+    "alpha_matting": False,
+}
 WEB_URL_BASE = (
     "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/"
 )
@@ -59,13 +64,26 @@ def slug_for_code(code: str) -> str:
     return code.lower().replace("/", "-")
 
 
+def _needs_bg_removal(img: Image.Image) -> bool:
+    """Return True if the image has no meaningful transparency."""
+    if img.mode != "RGBA":
+        return True
+    alpha = img.getchannel("A")
+    # If less than 1% of pixels are transparent, it needs removal
+    transparent = alpha.histogram()[0]
+    return transparent / (img.width * img.height) < 0.01
+
+
 def resize_image(src: Path, dst: Path) -> None:
-    """Resize *src* to fit within WEB_MAX_SIZE and save as WebP at *dst*."""
+    """Remove background if needed, resize to fit WEB_MAX_SIZE, save as WebP."""
     dst.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(src) as img:
-        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
         if img.mode not in ("RGB", "RGBA"):
-            img = img.convert("RGB")
+            img = img.convert("RGBA")
+        if _needs_bg_removal(img):
+            img.thumbnail(REMBG_MAX_SIZE, Image.Resampling.LANCZOS)
+            img = remove_bg(img, **REMBG_OPTS)
+        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
         img.save(dst, "WEBP", quality=WEB_QUALITY)
 
 
@@ -109,6 +127,85 @@ def apply_dupe_pairs(images_web_dir: Path) -> None:
             shutil.copy2(left, right)
         elif right.exists() and not left.exists():
             shutil.copy2(right, left)
+
+
+def generate_qa_report(images_dir: Path, qa_dir: Path, filter_codes: list[str] | None = None) -> int:
+    """Generate a side-by-side QA report without modifying production output.
+
+    If *filter_codes* is provided, only process images whose stem matches.
+    Returns the number of images processed.
+    """
+    if qa_dir.exists():
+        shutil.rmtree(qa_dir)
+    qa_dir.mkdir(parents=True)
+
+    source_files = sorted(images_dir.glob("*.png")) + sorted(
+        images_dir.glob("*.jpg")
+    )
+    if filter_codes:
+        allowed = {c.lower() for c in filter_codes}
+        source_files = [f for f in source_files if f.stem.lower() in allowed]
+    entries = []
+    for src in source_files:
+        stem = src.stem.lower()
+        before_path = qa_dir / f"{stem}_before.webp"
+        after_path = qa_dir / f"{stem}_after.webp"
+
+        with Image.open(src) as img:
+            if img.mode not in ("RGB", "RGBA"):
+                img = img.convert("RGBA")
+            # Save "before" thumbnail (no background removal)
+            before = img.copy()
+            before.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+            if before.mode not in ("RGB", "RGBA"):
+                before = before.convert("RGB")
+            before.save(before_path, "WEBP", quality=WEB_QUALITY)
+
+            # Save "after" thumbnail (with or without background removal)
+            if _needs_bg_removal(img):
+                img_small = img.copy()
+                img_small.thumbnail(REMBG_MAX_SIZE, Image.Resampling.LANCZOS)
+                removed = remove_bg(img_small, **REMBG_OPTS)
+                removed.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+                removed.save(after_path, "WEBP", quality=WEB_QUALITY)
+                entries.append((stem, True))
+            else:
+                # Already has transparency — just thumbnail
+                after = img.copy()
+                after.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+                after.save(after_path, "WEBP", quality=WEB_QUALITY)
+                entries.append((stem, False))
+
+    # Generate HTML report
+    rows = []
+    for stem, processed in entries:
+        status = "Removed" if processed else "Skipped (already transparent)"
+        rows.append(
+            f"<tr>"
+            f"<td><strong>{stem.upper()}</strong><br><small>{status}</small></td>"
+            f"<td><img src='{stem}_before.webp'></td>"
+            f"<td><img src='{stem}_after.webp'></td>"
+            f"</tr>"
+        )
+
+    html = (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<title>QA Review - Background Removal</title>"
+        "<style>"
+        "body{font-family:sans-serif;max-width:1400px;margin:0 auto;padding:20px}"
+        "table{border-collapse:collapse;width:100%}"
+        "td,th{border:1px solid #ccc;padding:8px;text-align:center}"
+        "img{max-width:300px;height:auto;background:repeating-conic-gradient("
+        "#ddd 0% 25%,#fff 0% 50%) 50%/20px 20px}"
+        "</style></head><body>"
+        "<h1>Background Removal QA Review</h1>"
+        f"<p>Total images: {len(entries)}</p>"
+        "<table><tr><th>Code</th><th>Before</th><th>After</th></tr>"
+        + "\n".join(rows)
+        + "</table></body></html>"
+    )
+    (qa_dir / "report.html").write_text(html, encoding="utf-8")
+    return len(entries)
 
 
 def load_series_info(csv_path: Path) -> dict[str, dict]:
@@ -185,7 +282,7 @@ def generate_gallery_html(
 # ---------------------------------------------------------------------------
 
 
-def main() -> int:
+def main(qa_mode: bool = False, qa_filter: list[str] | None = None) -> int:
     """Regenerate all derived artifacts from vehicle_images/images/."""
     root = Path(__file__).parent
     images_dir = root / "images"
@@ -198,6 +295,13 @@ def main() -> int:
     if not images_dir.exists():
         print(f"ERROR: {images_dir} does not exist", file=sys.stderr)
         return 1
+
+    if qa_mode:
+        qa_dir = root / "qa-review"
+        count = generate_qa_report(images_dir, qa_dir, filter_codes=qa_filter)
+        print(f"QA report: processed {count} images")
+        print(f"Open {qa_dir / 'report.html'} to review")
+        return 0
 
     if images_web_dir.exists():
         shutil.rmtree(images_web_dir)
@@ -239,4 +343,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build vehicle image pipeline")
+    parser.add_argument("--qa", action="store_true", help="Generate QA review report only")
+    parser.add_argument("--qa-filter", nargs="+", metavar="CODE", help="Only QA these codes (e.g. --qa-filter bz4 rav cor)")
+    args = parser.parse_args()
+    sys.exit(main(qa_mode=args.qa, qa_filter=args.qa_filter))

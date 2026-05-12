@@ -1,5 +1,5 @@
 import pytest
-from html_visual import generate_vehicle_html, grid_column_count, grid_row_count
+from html_visual import generate_vehicle_html, generate_vehicle_grid_html, grid_column_count, grid_row_count
 
 
 class TestPlaceholderState:
@@ -73,6 +73,54 @@ class TestVehicleHtml:
     def test_has_overflow_hidden(self):
         html = generate_vehicle_html(code="CAH", sort_index=10, total_count=60)
         assert "overflow:hidden" in html
+
+
+class TestGridN0:
+    def test_empty_list_shows_no_vehicles(self):
+        html = generate_vehicle_grid_html(codes=[])
+        assert "No vehicles" in html
+
+    def test_empty_list_has_no_grid(self):
+        html = generate_vehicle_grid_html(codes=[])
+        assert "display:grid" not in html
+
+    def test_empty_list_has_no_img(self):
+        html = generate_vehicle_grid_html(codes=[])
+        assert "<img" not in html
+
+
+class TestGridN1:
+    def test_single_code_full_bleed(self):
+        html = generate_vehicle_grid_html(
+            codes=["RAV"], sort_indexes={"RAV": 5}, total_count=60
+        )
+        assert "display:grid" not in html
+        assert "<img" in html
+        assert "rav.webp" in html
+
+    def test_single_code_has_slide_animation(self):
+        html = generate_vehicle_grid_html(
+            codes=["RAV"], sort_indexes={"RAV": 5}, total_count=60
+        )
+        assert "slide-from-left" in html
+
+    def test_single_code_has_label(self):
+        html = generate_vehicle_grid_html(
+            codes=["RAV"], sort_indexes={"RAV": 5}, total_count=60
+        )
+        assert ">RAV</span>" in html
+
+    def test_single_slash_code_url(self):
+        html = generate_vehicle_grid_html(
+            codes=["L/C"], sort_indexes={"L/C": 25}, total_count=60
+        )
+        assert "l-c.webp" in html
+
+    def test_single_code_second_half_slides_right(self):
+        html = generate_vehicle_grid_html(
+            codes=["TX"], sort_indexes={"TX": 55}, total_count=60
+        )
+        assert "slide-from-right" in html
 
 
 class TestGridColumnCount:

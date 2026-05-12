@@ -123,6 +123,77 @@ class TestGridN1:
         assert "slide-from-right" in html
 
 
+class TestGridN2to12:
+    def test_two_codes_has_grid(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "display:grid" in html
+
+    def test_two_codes_has_2_columns(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "grid-template-columns:repeat(2,minmax(0,1fr))" in html
+
+    def test_two_codes_has_1_row(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "grid-template-rows:repeat(1,minmax(0,1fr))" in html
+
+    def test_four_codes_has_2_columns_2_rows(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP", "CAH", "COR"])
+        assert "grid-template-columns:repeat(2,minmax(0,1fr))" in html
+        assert "grid-template-rows:repeat(2,minmax(0,1fr))" in html
+
+    def test_nine_codes_has_3x3(self):
+        codes = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
+        html = generate_vehicle_grid_html(codes=codes)
+        assert "grid-template-columns:repeat(3,minmax(0,1fr))" in html
+        assert "grid-template-rows:repeat(3,minmax(0,1fr))" in html
+
+    def test_grid_has_fade_animation(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "fade-in" in html
+        assert "slide-from" not in html
+
+    def test_grid_has_overflow_hidden(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "overflow:hidden" in html
+
+    def test_grid_has_all_images(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP", "COR"])
+        assert "rav.webp" in html
+        assert "rap.webp" in html
+        assert "cor.webp" in html
+
+    def test_grid_has_all_labels(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP", "COR"])
+        assert ">RAV</figcaption>" in html
+        assert ">RAP</figcaption>" in html
+        assert ">COR</figcaption>" in html
+
+    def test_grid_has_onerror_fallback(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "onerror=" in html
+        assert "placeholder.webp" in html
+
+    def test_slash_code_in_grid(self):
+        html = generate_vehicle_grid_html(codes=["L/C", "RAV"])
+        assert "l-c.webp" in html
+
+    def test_figcaption_has_ellipsis(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "text-overflow:ellipsis" in html
+
+    def test_grid_has_css_keyframes(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "@keyframes fade-in" in html
+
+    def test_figure_has_height_100(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "height:100%" in html
+
+    def test_img_has_min_height_0(self):
+        html = generate_vehicle_grid_html(codes=["RAV", "RAP"])
+        assert "min-height:0" in html
+
+
 class TestGridColumnCount:
     @pytest.mark.parametrize("n, expected", [
         (1, 1),

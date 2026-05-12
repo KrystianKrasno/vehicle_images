@@ -24,6 +24,14 @@ CSS_BLOCK = """\
 }
 </style>"""
 
+GRID_CSS_BLOCK = """\
+<style>
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+</style>"""
+
 PLACEHOLDER_HTML = (
     "<div style='display:flex;justify-content:center;align-items:center;"
     "height:100%;animation:fade-in 0.5s ease-out forwards;'>"
@@ -109,7 +117,40 @@ def generate_vehicle_grid_html(
             "</div>"
         )
 
-    # Placeholder for N=2-12 and N>12 (implemented in next task)
+    # N = 2-12: responsive CSS Grid
+    if n <= 12:
+        cols = grid_column_count(n)
+        rows = grid_row_count(n, cols)
+        tiles = []
+        for code in codes:
+            slug = slug_for_code(code)
+            img_url = base_url + slug + ".webp"
+            tiles.append(
+                "<figure style='margin:4px;display:flex;flex-direction:column;"
+                "align-items:center;justify-content:center;"
+                "width:100%;height:100%;min-width:0;min-height:0;'>"
+                f"<img src='{img_url}' "
+                "style='max-width:100%;max-height:100%;object-fit:contain;"
+                "flex:1 1 auto;min-width:0;min-height:0;' "
+                f"onerror=\"this.src='{base_url}placeholder.webp'\">"
+                f"<figcaption style='font-size:12px;color:#555;"
+                "font-family:sans-serif;margin-top:4px;max-width:100%;"
+                f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>"
+                f"{code}</figcaption>"
+                "</figure>"
+            )
+        grid_html = (
+            f"<div style='display:grid;"
+            f"grid-template-columns:repeat({cols},minmax(0,1fr));"
+            f"grid-template-rows:repeat({rows},minmax(0,1fr));"
+            "height:100%;overflow:hidden;"
+            "animation:fade-in 0.4s ease-out forwards;'>"
+            + "".join(tiles)
+            + "</div>"
+        )
+        return GRID_CSS_BLOCK + grid_html
+
+    # Placeholder for N>12 (implemented in next task)
     return ""
 
 

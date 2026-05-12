@@ -52,7 +52,7 @@ VAR Cols =
         N = 9, 3,
         4
     )
-VAR Rows = CEILING ( DIVIDE ( N, Cols ), 1 )
+VAR RowCount = CEILING ( DIVIDE ( N, Cols ), 1 )
 VAR GridTiles =
     CONCATENATEX (
         VALUES ( 'Series'[Series Code] ),
@@ -68,7 +68,7 @@ VAR GridTiles =
         ""
     )
 VAR GridHtml =
-    "<div style='display:grid;grid-template-columns:repeat(" & Cols & ",minmax(0,1fr));grid-template-rows:repeat(" & Rows & ",minmax(0,1fr));height:100%;overflow:hidden;animation:fade-in 0.4s ease-out forwards;'>" &
+    "<div style='display:grid;grid-template-columns:repeat(" & Cols & ",minmax(0,1fr));grid-template-rows:repeat(" & RowCount & ",minmax(0,1fr));height:100%;overflow:hidden;animation:fade-in 0.4s ease-out forwards;'>" &
         GridTiles &
     "</div>"
 -- -----------------------------------------------------------------------

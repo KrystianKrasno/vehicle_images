@@ -150,8 +150,27 @@ def generate_vehicle_grid_html(
         )
         return GRID_CSS_BLOCK + grid_html
 
-    # Placeholder for N>12 (implemented in next task)
-    return ""
+    # N > 12: legacy fixed-size tile layout (current behaviour)
+    tiles = []
+    for code in codes:
+        slug = slug_for_code(code)
+        img_url = base_url + slug + ".webp"
+        tiles.append(
+            "<figure style='margin:8px;text-align:center;flex:0 0 auto;'>"
+            f"<img src='{img_url}' "
+            "style='height:140px;max-width:240px;object-fit:contain;' "
+            f"onerror=\"this.src='{base_url}placeholder.webp'\">"
+            f"<figcaption style='font-size:12px;margin-top:4px;'>"
+            f"{code}</figcaption>"
+            "</figure>"
+        )
+    legacy_html = (
+        "<div style='display:flex;flex-wrap:wrap;"
+        "justify-content:center;align-items:flex-start;'>"
+        + "".join(tiles)
+        + "</div>"
+    )
+    return legacy_html
 
 
 def generate_vehicle_html(

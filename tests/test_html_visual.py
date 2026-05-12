@@ -213,6 +213,43 @@ class TestGridColumnCount:
         assert grid_column_count(n) == expected
 
 
+class TestGridLegacy:
+    def test_13_codes_uses_fixed_tiles(self):
+        codes = [f"C{i:02d}" for i in range(13)]
+        html = generate_vehicle_grid_html(codes=codes)
+        assert "height:140px" in html
+        assert "max-width:240px" in html
+
+    def test_13_codes_no_css_grid(self):
+        codes = [f"C{i:02d}" for i in range(13)]
+        html = generate_vehicle_grid_html(codes=codes)
+        assert "display:grid" not in html
+
+    def test_13_codes_uses_flex_wrap(self):
+        codes = [f"C{i:02d}" for i in range(13)]
+        html = generate_vehicle_grid_html(codes=codes)
+        assert "flex-wrap:wrap" in html
+
+    def test_13_codes_has_all_images(self):
+        codes = ["RAV", "RAP", "COR", "CAH", "CAM", "HIG", "PRS",
+                 "AVA", "TUN", "SEQ", "GR8", "BZ4", "SIE"]
+        html = generate_vehicle_grid_html(codes=codes)
+        for code in codes:
+            slug = code.lower()
+            assert f"{slug}.webp" in html
+
+    def test_13_codes_has_onerror(self):
+        codes = [f"C{i:02d}" for i in range(13)]
+        html = generate_vehicle_grid_html(codes=codes)
+        assert "onerror=" in html
+        assert "placeholder.webp" in html
+
+    def test_legacy_has_figcaption(self):
+        codes = [f"C{i:02d}" for i in range(13)]
+        html = generate_vehicle_grid_html(codes=codes)
+        assert "<figcaption" in html
+
+
 class TestGridRowCount:
     @pytest.mark.parametrize("n, expected_rows", [
         (1, 1),

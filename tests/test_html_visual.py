@@ -1,4 +1,5 @@
-from html_visual import generate_vehicle_html
+import pytest
+from html_visual import generate_vehicle_html, grid_column_count, grid_row_count
 
 
 class TestPlaceholderState:
@@ -72,3 +73,42 @@ class TestVehicleHtml:
     def test_has_overflow_hidden(self):
         html = generate_vehicle_html(code="CAH", sort_index=10, total_count=60)
         assert "overflow:hidden" in html
+
+
+class TestGridColumnCount:
+    @pytest.mark.parametrize("n, expected", [
+        (1, 1),
+        (2, 2),
+        (3, 3),
+        (4, 2),
+        (5, 3),
+        (6, 3),
+        (7, 4),
+        (8, 4),
+        (9, 3),
+        (10, 4),
+        (11, 4),
+        (12, 4),
+    ])
+    def test_column_count(self, n, expected):
+        assert grid_column_count(n) == expected
+
+
+class TestGridRowCount:
+    @pytest.mark.parametrize("n, expected_rows", [
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (4, 2),
+        (5, 2),
+        (6, 2),
+        (7, 2),
+        (8, 2),
+        (9, 3),
+        (10, 3),
+        (11, 3),
+        (12, 3),
+    ])
+    def test_row_count(self, n, expected_rows):
+        cols = grid_column_count(n)
+        assert grid_row_count(n, cols) == expected_rows

@@ -4,6 +4,8 @@ This module is the single source of truth for the HTML template logic.
 The DAX measure in Power BI mirrors this logic using string concatenation.
 """
 
+import math
+
 from build import WEB_URL_BASE, slug_for_code
 
 CSS_BLOCK = """\
@@ -34,6 +36,29 @@ def _slide_direction(sort_index: int, total_count: int) -> str:
     """Return CSS animation name based on position in the sorted lineup."""
     midpoint = total_count / 2
     return "slide-from-left" if sort_index <= midpoint else "slide-from-right"
+
+
+def grid_column_count(n: int) -> int:
+    """Return the number of grid columns for *n* vehicles.
+
+    Mirrors the DAX SWITCH(TRUE(), ...) lookup in VehicleImagesGridHTML.dax.
+    """
+    if n <= 3:
+        return n
+    if n == 4:
+        return 2
+    if n <= 6:
+        return 3
+    if n <= 8:
+        return 4
+    if n == 9:
+        return 3
+    return 4
+
+
+def grid_row_count(n: int, cols: int) -> int:
+    """Return the number of grid rows: ceil(n / cols)."""
+    return math.ceil(n / cols)
 
 
 def generate_vehicle_html(

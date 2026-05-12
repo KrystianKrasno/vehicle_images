@@ -220,6 +220,14 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lfa.webp"
   },
   {
+    "code": "LFC",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lfc.webp"
+  },
+  {
+    "code": "LFH",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lfh.webp"
+  },
+  {
     "code": "LFR",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/lfr.webp"
   },
@@ -316,6 +324,10 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rcf.webp"
   },
   {
+    "code": "RHL",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rhl.webp"
+  },
+  {
     "code": "RNH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rnh.webp"
   },
@@ -336,6 +348,14 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rxh.webp"
   },
   {
+    "code": "RXL",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rxl.webp"
+  },
+  {
+    "code": "RXP",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rxp.webp"
+  },
+  {
     "code": "RZ",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/rz.webp"
   },
@@ -346,6 +366,10 @@
   {
     "code": "SEH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/seh.webp"
+  },
+  {
+    "code": "SEQ",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/seq.webp"
   },
   {
     "code": "SIE",
@@ -396,6 +420,10 @@
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/txh.webp"
   },
   {
+    "code": "TXP",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/txp.webp"
+  },
+  {
     "code": "TZ",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/tz.webp"
   },
@@ -430,6 +458,10 @@
   {
     "code": "YAH",
     "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/yah.webp"
+  },
+  {
+    "code": "YAS",
+    "url": "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/yas.webp"
   },
   {
     "code": "YRC",

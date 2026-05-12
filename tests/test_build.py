@@ -56,12 +56,12 @@ class TestResizeImage:
             assert out.width <= WEB_MAX_SIZE[0]
             assert out.height <= WEB_MAX_SIZE[1]
 
-    def test_preserves_aspect_ratio(self, sample_png, tmp_path):
+    def test_fixed_canvas_size(self, sample_png, tmp_path):
+        """All output images are normalized to WEB_MAX_SIZE canvas."""
         dst = tmp_path / "sample.webp"
         resize_image(sample_png, dst)
         with Image.open(dst) as out:
-            assert out.width == 600
-            assert 335 <= out.height <= 340
+            assert out.size == WEB_MAX_SIZE
 
     def test_output_is_webp_format(self, sample_png, tmp_path):
         dst = tmp_path / "sample.webp"

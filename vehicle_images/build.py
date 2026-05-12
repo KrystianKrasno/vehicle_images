@@ -24,6 +24,13 @@ REMBG_MAX_SIZE = (1200, 800)  # Downsample before background removal to save RAM
 REMBG_OPTS = {
     "alpha_matting": False,
 }
+
+# Normalization: vehicle should fill 75% of canvas, centered at 55% from top
+NORM_FILL = 0.75  # Vehicle fits within 75% of both canvas width and height
+NORM_VERTICAL_CENTER = 0.55  # Place vehicle center at 55% from top
+NORM_MAX_UPSCALE = 1.10  # Never upscale more than 10%
+NORM_BBOX_TRIM = 2  # Trim px from alpha bbox edges to remove rembg halo
+NORM_FAIL_THRESHOLD = 0.85  # Fill > 85% = likely rembg failure
 WEB_URL_BASE = (
     "https://krystiankrasno.github.io/vehicle_images/vehicle_images/images-web/"
 )
@@ -74,16 +81,83 @@ def _needs_bg_removal(img: Image.Image) -> bool:
     return transparent / (img.width * img.height) < 0.01
 
 
+def normalize_on_canvas(img: Image.Image) -> Image.Image:
+    """Crop to vehicle bbox, scale to fill NORM_FILL of canvas, center at NORM_VERTICAL_CENTER.
+
+    Returns a fixed WEB_MAX_SIZE RGBA image. If rembg likely failed (fill > threshold),
+    returns the image as-is with a warning printed.
+    """
+    canvas_w, canvas_h = WEB_MAX_SIZE
+
+    if img.mode != "RGBA":
+        # No alpha channel — can't normalize, return as-is on canvas
+        canvas = Image.new("RGBA", WEB_MAX_SIZE, (0, 0, 0, 0))
+        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+        paste_x = (canvas_w - img.width) // 2
+        paste_y = (canvas_h - img.height) // 2
+        canvas.paste(img, (paste_x, paste_y))
+        return canvas
+
+    alpha = img.getchannel("A")
+    bbox = alpha.getbbox()
+    if bbox is None:
+        # Fully transparent — return empty canvas
+        return Image.new("RGBA", WEB_MAX_SIZE, (0, 0, 0, 0))
+
+    # Check for rembg failure (vehicle fills almost the entire image)
+    veh_area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+    img_area = img.width * img.height
+    if veh_area / img_area > NORM_FAIL_THRESHOLD:
+        print(f"  WARN: rembg may have failed (fill={veh_area / img_area:.0%}), passing through")
+        canvas = Image.new("RGBA", WEB_MAX_SIZE, (0, 0, 0, 0))
+        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+        paste_x = (canvas_w - img.width) // 2
+        paste_y = (canvas_h - img.height) // 2
+        canvas.paste(img, (paste_x, paste_y), img)
+        return canvas
+
+    # Trim halo from bbox edges
+    x0 = min(bbox[0] + NORM_BBOX_TRIM, bbox[2])
+    y0 = min(bbox[1] + NORM_BBOX_TRIM, bbox[3])
+    x1 = max(bbox[2] - NORM_BBOX_TRIM, x0)
+    y1 = max(bbox[3] - NORM_BBOX_TRIM, y0)
+
+    # Crop to vehicle
+    vehicle = img.crop((x0, y0, x1, y1))
+    vw, vh = vehicle.size
+
+    # Target zone: 75% of canvas
+    target_w = canvas_w * NORM_FILL
+    target_h = canvas_h * NORM_FILL
+
+    # Scale factor: fit within target zone, cap upscaling
+    scale = min(target_w / vw, target_h / vh)
+    scale = min(scale, NORM_MAX_UPSCALE)  # Cap upscale
+
+    new_w = round(vw * scale)
+    new_h = round(vh * scale)
+    vehicle = vehicle.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+    # Place on canvas: horizontally centered, vertically at 55% from top
+    canvas = Image.new("RGBA", WEB_MAX_SIZE, (0, 0, 0, 0))
+    paste_x = (canvas_w - new_w) // 2
+    paste_y = round(canvas_h * NORM_VERTICAL_CENTER - new_h / 2)
+    # Clamp to canvas bounds
+    paste_y = max(0, min(paste_y, canvas_h - new_h))
+    canvas.paste(vehicle, (paste_x, paste_y), vehicle)
+    return canvas
+
+
 def resize_image(src: Path, dst: Path) -> None:
-    """Remove background if needed, resize to fit WEB_MAX_SIZE, save as WebP."""
+    """Remove background if needed, normalize onto fixed canvas, save as WebP."""
     dst.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(src) as img:
         if img.mode not in ("RGB", "RGBA"):
             img = img.convert("RGBA")
         if _needs_bg_removal(img):
             img.thumbnail(REMBG_MAX_SIZE, Image.Resampling.LANCZOS)
-            img = remove_bg(img, **REMBG_OPTS)
-        img.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
+            img = remove_bg(img, **REMBG_OPTS)  # type: ignore[assignment]
+        img = normalize_on_canvas(img)
         img.save(dst, "WEBP", quality=WEB_QUALITY)
 
 
@@ -154,26 +228,25 @@ def generate_qa_report(images_dir: Path, qa_dir: Path, filter_codes: list[str] |
         with Image.open(src) as img:
             if img.mode not in ("RGB", "RGBA"):
                 img = img.convert("RGBA")
-            # Save "before" thumbnail (no background removal)
+            # Save "before" thumbnail (no background foval)
             before = img.copy()
             before.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
             if before.mode not in ("RGB", "RGBA"):
                 before = before.convert("RGB")
             before.save(before_path, "WEBP", quality=WEB_QUALITY)
 
-            # Save "after" thumbnail (with or without background removal)
+            # Save "after" (bg removal + normalization)
             if _needs_bg_removal(img):
                 img_small = img.copy()
                 img_small.thumbnail(REMBG_MAX_SIZE, Image.Resampling.LANCZOS)
-                removed = remove_bg(img_small, **REMBG_OPTS)
-                removed.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
-                removed.save(after_path, "WEBP", quality=WEB_QUALITY)
+                removed = remove_bg(img_small, **REMBG_OPTS)  # type: ignore[assignment]
+                normalized = normalize_on_canvas(removed)
+                normalized.save(after_path, "WEBP", quality=WEB_QUALITY)
                 entries.append((stem, True))
             else:
-                # Already has transparency — just thumbnail
-                after = img.copy()
-                after.thumbnail(WEB_MAX_SIZE, Image.Resampling.LANCZOS)
-                after.save(after_path, "WEBP", quality=WEB_QUALITY)
+                # Already has transparency — normalize onto canvas
+                normalized = normalize_on_canvas(img)
+                normalized.save(after_path, "WEBP", quality=WEB_QUALITY)
                 entries.append((stem, False))
 
     # Generate HTML report

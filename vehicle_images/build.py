@@ -41,8 +41,6 @@ DUPE_PAIRS = [
     ("tp2.webp", "tp4.webp"),
     # Family image sharing (source, target)
     ("cp4.webp", "cph.webp"),
-    ("es.webp", "ese.webp"),
-    ("es.webp", "esh.webp"),
     ("ghi.webp", "ghh.webp"),
     ("hig.webp", "hih.webp"),
     ("lch.webp", "lcc.webp"),

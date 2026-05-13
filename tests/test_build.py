@@ -136,25 +136,25 @@ class TestGeneratePlaceholder:
 
 class TestApplyDupePairs:
     def test_copies_left_to_right(self, tmp_path):
-        (tmp_path / "cp4.webp").write_bytes(b"tacoma")
+        (tmp_path / "ghi.webp").write_bytes(b"highlander")
         apply_dupe_pairs(tmp_path)
-        assert (tmp_path / "cp2.webp").read_bytes() == b"tacoma"
+        assert (tmp_path / "ghh.webp").read_bytes() == b"highlander"
 
     def test_copies_right_to_left(self, tmp_path):
-        (tmp_path / "cp2.webp").write_bytes(b"tacoma")
+        (tmp_path / "ghh.webp").write_bytes(b"highlander")
         apply_dupe_pairs(tmp_path)
-        assert (tmp_path / "cp4.webp").read_bytes() == b"tacoma"
+        assert (tmp_path / "ghi.webp").read_bytes() == b"highlander"
 
     def test_noop_when_both_exist(self, tmp_path):
-        (tmp_path / "cp2.webp").write_bytes(b"original-cp2")
-        (tmp_path / "cp4.webp").write_bytes(b"original-cp4")
+        (tmp_path / "ghi.webp").write_bytes(b"original-ghi")
+        (tmp_path / "ghh.webp").write_bytes(b"original-ghh")
         apply_dupe_pairs(tmp_path)
-        assert (tmp_path / "cp2.webp").read_bytes() == b"original-cp2"
-        assert (tmp_path / "cp4.webp").read_bytes() == b"original-cp4"
+        assert (tmp_path / "ghi.webp").read_bytes() == b"original-ghi"
+        assert (tmp_path / "ghh.webp").read_bytes() == b"original-ghh"
 
     def test_noop_when_neither_exists(self, tmp_path):
         apply_dupe_pairs(tmp_path)
-        assert not (tmp_path / "cp2.webp").exists()
+        assert not (tmp_path / "ghh.webp").exists()
 
 
 class TestGenerateGalleryHtml:

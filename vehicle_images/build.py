@@ -36,11 +36,7 @@ WEB_URL_BASE = (
 )
 
 DUPE_PAIRS = [
-    # Tacoma/Tundra 4X2 and 4X4 share the same image
-    ("cp2.webp", "cp4.webp"),
-    ("tp2.webp", "tp4.webp"),
     # Family image sharing (source, target)
-    ("cp4.webp", "cph.webp"),
     ("ghi.webp", "ghh.webp"),
     ("hig.webp", "hih.webp"),
     ("lch.webp", "lcc.webp"),
@@ -50,7 +46,6 @@ DUPE_PAIRS = [
     ("prd.webp", "tz.webp"),
     ("rav.webp", "rah.webp"),
     ("rc.webp", "rcf.webp"),
-    ("tp4.webp", "tph.webp"),
     ("tx.webp", "txh.webp"),
     ("ux.webp", "uxh.webp"),
 ]

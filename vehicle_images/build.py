@@ -44,7 +44,6 @@ DUPE_PAIRS = [
     ("nx.webp", "nxh.webp"),
     ("prd.webp", "l-c.webp"),
     ("prd.webp", "tz.webp"),
-    ("rav.webp", "rah.webp"),
     ("rc.webp", "rcf.webp"),
     ("tx.webp", "txh.webp"),
     ("ux.webp", "uxh.webp"),
